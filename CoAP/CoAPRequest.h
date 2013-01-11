@@ -30,7 +30,7 @@ extern "C" {
 
 class CoAPRequest {
 public:
-	void* _request;
+	void* request;
 	const uint16_t preferredSize;
 public:
 	CoAPRequest(void* request, uint16_t preferredSize);
