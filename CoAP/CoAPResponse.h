@@ -50,6 +50,7 @@ public:
 	int setMaxAge(uint32_t age);
 	int setETag(const uint8_t *etag, size_t length);
 	int setBlock1(uint32_t num, uint8_t more, uint16_t size);
+	int setBlock2(uint32_t num, uint8_t more, uint16_t size);
 	int32_t getOffset();
 	void blockAppend(int32_t length);
 	void blockComplete();

@@ -82,6 +82,10 @@ int CoAPResponse::setBlock1(uint32_t num, uint8_t more, uint16_t size) {
 	return coap_set_header_block1(_response, num, more, size);
 }
 
+int CoAPResponse::setBlock2(uint32_t num, uint8_t more, uint16_t size) {
+	return coap_set_header_block2(_response, num, more, size);
+}
+
 int32_t CoAPResponse::getOffset() {
 	return *_offset;
 }
