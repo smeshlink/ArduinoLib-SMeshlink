@@ -9,7 +9,8 @@
 
 #include <string.h>
 
-#include "../CoAPServer.h"
+#include "CoAPServer.h"
+#include "contiki-arduino.h" //it is important, do not remove
 
 /* Define which resources to include to meet memory constraints. */
 #define REST_RES_TEST 1
