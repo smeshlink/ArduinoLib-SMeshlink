@@ -1,8 +1,9 @@
 #include "MXN820.h"
 #include "Wire.h"
 #define CONTROLCHIPADDRESS  0x27
- unsigned char arduino_node_id[8];
-
+extern "C" {
+extern unsigned char arduino_node_id[8];
+}
 MXN820::MXN820() {
 
 }
