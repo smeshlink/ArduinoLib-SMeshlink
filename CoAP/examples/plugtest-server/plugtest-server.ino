@@ -10,17 +10,18 @@
 #include <string.h>
 
 #include "CoAPServer.h"
-#include "contiki-arduino.h" //it is important, do not remove
 
 /* Define which resources to include to meet memory constraints. */
 #define REST_RES_TEST 1
 #define REST_RES_LONG 1
 #define REST_RES_QUERY 1
-#define REST_RES_SEPARATE 0
+#define REST_RES_SEPARATE 1
 #define REST_RES_LARGE 1
 #define REST_RES_LARGE_UPDATE 0
 #define REST_RES_LARGE_CREATE 1
 #define REST_RES_OBS 1
+
+#define MAX_PLUGFEST_PAYLOAD 64 + 1 /* +1 for the terminating zero, which is not transmitted */
 
 #if REST_RES_TEST
 /*
@@ -103,7 +104,26 @@ protected:
 #endif
 
 #if REST_RES_SEPARATE
-#warning "Separate resource has not been implemented yet"
+#include "SeparateResource.h"
+
+class SepResource : public SeparateResource {
+private:
+	char _buffer[MAX_PLUGFEST_PAYLOAD];
+public:
+	SepResource() : SeparateResource("separate", 3 * CLOCK_SECOND)
+	{
+	}
+protected:
+	virtual void begin(CoAPRequest& request)
+	{
+		snprintf(_buffer, MAX_PLUGFEST_PAYLOAD, "Type: %u\nCode: %u\nMID: %u", request.getType(), request.getCode(), request.getId());
+	}
+	virtual void end(CoAPResponse& response)
+	{
+		response.setContentType(REST.type.TEXT_PLAIN);
+		response.print(_buffer);
+	}
+} resSeparate;
 #endif
 
 #if REST_RES_LARGE
@@ -345,6 +365,8 @@ protected:
 } resObservable;
 #endif
 
+#include "contiki-arduino.h"
+
 void config()
 {
 }
@@ -360,6 +382,9 @@ void setup()
 #endif
 #if REST_RES_QUERY
 	CoAPServer.addResource(&resQuery);
+#endif
+#if REST_RES_SEPARATE
+	CoAPServer.addResource(&resSeparate);
 #endif
 #if REST_RES_LARGE
 	CoAPServer.addResource(&resLarge);
