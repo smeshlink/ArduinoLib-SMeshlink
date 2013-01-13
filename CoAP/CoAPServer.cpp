@@ -52,7 +52,7 @@ void CoAPServerImpl::handleRequest(void* request, void* response, uint8_t *buffe
 	CoAPRequest coapRequest(request, preferred_size);
 	const char *url;
 	int len = coapRequest.getPath(&url);
-	CoAPResource* res = listFind(url, len);
+	CoAPResource *res = listFind(url, len);
 	CoAPResponse coapResponse(response, buffer, offset);
 
 	if (res != NULL) {
@@ -64,7 +64,7 @@ void CoAPServerImpl::handleRequest(void* request, void* response, uint8_t *buffe
 }
 
 void CoAPServerImpl::handlePeriodic(resource_t *resource) {
-	PeriodicResource* res = (PeriodicResource *)listFind(resource->url, strlen(resource->url));
+	PeriodicResource *res = (PeriodicResource *)listFind(resource->url, strlen(resource->url));
 	if (res) {
 		CoAPObserveResponse response;
 		if (res != NULL) {
@@ -81,7 +81,7 @@ void CoAPServerImpl::listAdd(CoAPResource *resource) {
 	if (list == NULL) {
 		list = resource;
 	} else {
-		CoAPResource* prev = list;
+		CoAPResource *prev = list;
 		while (prev->_next != NULL)
 			prev = prev->_next;
 		prev->_next = resource;
@@ -89,7 +89,7 @@ void CoAPServerImpl::listAdd(CoAPResource *resource) {
 }
 
 CoAPResource* CoAPServerImpl::listFind(const char *url, int length) {
-	CoAPResource* res = list;
+	CoAPResource *res = list;
 	while (res != NULL) {
 		if (strncmp(res->_resource.url, url, length) == 0)
 			break;
