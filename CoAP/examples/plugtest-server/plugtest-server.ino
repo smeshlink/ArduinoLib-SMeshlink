@@ -367,10 +367,6 @@ protected:
 
 #include "contiki-arduino.h"
 
-void config()
-{
-}
-
 void setup()
 {
 	CoAPServer.init();
