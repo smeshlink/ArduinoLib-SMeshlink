@@ -9,6 +9,7 @@
 
 #include <string.h>
 
+#include "contiki-arduino.h"
 #include "CoAPServer.h"
 
 CoAPServerImpl CoAPServer;
@@ -22,6 +23,7 @@ CoAPServerImpl::~CoAPServerImpl() {
 }
 
 void CoAPServerImpl::init() {
+	initialize();
 	rest_init_engine();
 }
 
