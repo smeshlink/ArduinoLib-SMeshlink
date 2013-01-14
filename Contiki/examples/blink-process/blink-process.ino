@@ -9,6 +9,7 @@
 
 #include "contiki-arduino.h"
 #include "Process.h"
+#include "ExpiryTimer.h"
 
 extern "C" {
 #include "dev/leds.h"
@@ -21,7 +22,7 @@ extern "C" {
 class BlinkProcess : public Process
 {
 private:
-	struct etimer _timer;
+	ExpiryTimer _timer;
 	uint8_t _leds_state;
 public:
 	BlinkProcess() : _leds_state(0)
@@ -35,9 +36,10 @@ protected:
 
 		while(1) {
 			/* Set the etimer every time. */
-			etimer_set(&_timer, CLOCK_SECOND * 1);
+			_timer.start(1);
+
 			/* And wait until the specific event. */
-			PROCESS_WAIT_EVENT_UNTIL(ev == PROCESS_EVENT_TIMER);
+			PROCESS_WAIT_EVENT_UNTIL(_timer.expired());
 
 			/* Change the state of leds. */
 			leds_off(LEDS_ALL);
@@ -55,12 +57,12 @@ protected:
 class LedBlinkProcess : public Process
 {
 private:
-	struct etimer _timer;
-	clock_time_t _time;
+	ExpiryTimer _timer;
+	int _seconds;
 	uint8_t _led;
 public:
-	LedBlinkProcess(const char *name, uint8_t led, clock_time_t time)
-		: Process(name), _time(time), _led(led)
+	LedBlinkProcess(const char *name, uint8_t led, int seconds)
+		: Process(name), _seconds(seconds), _led(led)
 	{
 	}
 protected:
@@ -71,9 +73,10 @@ protected:
 
 		while(1) {
 			/* Set the etimer every time. */
-			etimer_set(&_timer, _time);
+			_timer.start(_seconds);
+
 			/* And wait until the specific event. */
-			PROCESS_WAIT_EVENT_UNTIL(ev == PROCESS_EVENT_TIMER);
+			PROCESS_WAIT_EVENT_UNTIL(_timer.expired());
 
 			/* Change the state of leds. */
 			leds_toggle(_led);
@@ -83,8 +86,8 @@ protected:
 		PROCESS_END();
 	}
 };
-LedBlinkProcess procYellow("yellow blink", LEDS_YELLOW, CLOCK_SECOND * 1);
-LedBlinkProcess procGreen("green blink", LEDS_GREEN, CLOCK_SECOND * 3);
+LedBlinkProcess procYellow("yellow blink", LEDS_YELLOW, 1);
+LedBlinkProcess procGreen("green blink", LEDS_GREEN, 3);
 #endif
 
 void setup()
