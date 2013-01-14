@@ -14,9 +14,12 @@ Process* Process::list = NULL;
 
 PT_THREAD(Process::process_thread_process_manager(struct pt *process_pt, process_event_t ev, process_data_t data))
 {
-	Process *proc = listFind(PROCESS_CURRENT());
-	if (proc)
-		return proc->thread(process_pt, ev, data);
+	Process *proc = listFind(process_pt);
+	if (proc) {
+		proc->ev = ev;
+		proc->data = data;
+		return proc->doRun();
+	}
 	else
 		return PT_ENDED;
 }
@@ -32,9 +35,9 @@ void Process::listAdd(Process *proc) {
 	}
 }
 
-Process* Process::listFind(struct process *p) {
+Process* Process::listFind(struct pt *process_pt) {
 	Process *q = list;
-	for(q = list; &q->_process != p && q != NULL; q = q->_next) ;
+	for(q = list; &q->_process.pt != process_pt && q != NULL; q = q->_next) ;
 	return q;
 }
 
@@ -44,6 +47,7 @@ Process::Process(const char *name) {
 	_process.name = name;
 #endif
 	_process.thread = process_thread_process_manager;
+	process_pt = &_process.pt;
 }
 
 Process::~Process() {

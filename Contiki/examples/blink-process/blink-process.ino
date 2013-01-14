@@ -28,7 +28,7 @@ public:
 	{
 	}
 protected:
-	virtual PT_THREAD(thread(struct pt *process_pt, process_event_t ev, process_data_t data))
+	virtual PT_THREAD(doRun())
 	{
 		/* Any process must start with this. */
 		PROCESS_BEGIN();
@@ -59,11 +59,12 @@ private:
 	clock_time_t _time;
 	uint8_t _led;
 public:
-	LedBlinkProcess(const char *name, uint8_t led, clock_time_t time) : Process(name), _time(time), _led(led)
+	LedBlinkProcess(const char *name, uint8_t led, clock_time_t time)
+		: Process(name), _time(time), _led(led)
 	{
 	}
 protected:
-	virtual PT_THREAD(thread(struct pt *process_pt, process_event_t ev, process_data_t data))
+	virtual PT_THREAD(doRun())
 	{
 		/* Any process must start with this. */
 		PROCESS_BEGIN();
