@@ -21,13 +21,17 @@ private:
 	Process *_next;
 	PROCESS_THREAD(process_manager, ev, data);
 	static void listAdd(Process *proc);
-	static Process* listFind(struct process *p);
+	static Process* listFind(struct pt *process_pt);
+protected:
+	struct pt *process_pt;
+	process_event_t ev;
+	process_data_t data;
 public:
 	Process(const char *name = NULL);
 	virtual ~Process();
 	void run(const char *arg = NULL);
 protected:
-	virtual PT_THREAD(thread(struct pt *process_pt, process_event_t ev, process_data_t data)) = 0;
+	virtual PT_THREAD(doRun()) = 0;
 };
 
 #endif /* PROCESS_H_ */
