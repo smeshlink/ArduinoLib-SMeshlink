@@ -66,14 +66,7 @@ void CoAPServerImpl::handleRequest(void* request, void* response, uint8_t *buffe
 void CoAPServerImpl::handlePeriodic(resource_t *resource) {
 	PeriodicResource *res = (PeriodicResource *)listFind(resource->url, strlen(resource->url));
 	if (res) {
-		CoAPObserveResponse response;
-		if (res != NULL) {
-			res->obsCounter++;
-			if (res->trigger(response)) {
-				response.flush();
-				REST.notify_subscribers(resource, res->obsCounter, &response.notification);
-			}
-		}
+		res->fire();
 	}
 }
 

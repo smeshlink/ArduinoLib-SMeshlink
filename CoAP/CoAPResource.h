@@ -16,6 +16,8 @@ class PeriodicResource;
 
 #include "CoAPServer.h"
 
+typedef void(*CoAPHandler)(CoAPRequest&, CoAPResponse&);
+
 class CoAPResource {
 private:
 	CoAPResource *_next;
@@ -24,7 +26,13 @@ private:
 protected:
 	resource_t _resource;
 public:
-	CoAPResource(const char *url);
+	CoAPHandler GET;
+	CoAPHandler POST;
+	CoAPHandler PUT;
+	CoAPHandler DELETE;
+public:
+	CoAPResource(const char *url, const char *attributes = NULL, CoAPHandler GET = NULL,
+			CoAPHandler POST = NULL, CoAPHandler PUT = NULL, CoAPHandler DELETE = NULL);
 	virtual ~CoAPResource();
 	void setAttributes(const char *attributes);
 protected:
@@ -38,7 +46,8 @@ protected:
 class EventResource : public CoAPResource {
 public:
 	uint16_t obsCounter;
-	EventResource(const char *url);
+	EventResource(const char *url, const char *attributes = NULL, CoAPHandler GET = NULL,
+			CoAPHandler POST = NULL, CoAPHandler PUT = NULL, CoAPHandler DELETE = NULL);
 protected:
 	virtual void activate(CoAPServerImpl *server);
 	virtual bool trigger(CoAPResponse& response);
@@ -52,11 +61,11 @@ private:
 	periodic_resource_t _periodicResource;
 	friend class CoAPServerImpl;
 public:
-	PeriodicResource(const char *url, uint32_t period);
+	PeriodicResource(const char *url, uint32_t period, const char *attributes = NULL, CoAPHandler GET = NULL,
+			CoAPHandler POST = NULL, CoAPHandler PUT = NULL, CoAPHandler DELETE = NULL);
 	void setPeriod(uint32_t period);
 protected:
 	virtual void activate(CoAPServerImpl *server);
-	virtual bool trigger(CoAPResponse& response);
 };
 
 #endif /* COAPRESOURCE_H_ */
