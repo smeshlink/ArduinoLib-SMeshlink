@@ -12,6 +12,7 @@ public:
 
 	MXN820();
 	void BuzzerID();
+	void BuzzerValue(int value);
 	int GetBatteryVoltage();
 	int GetChargeVoltage();
 
