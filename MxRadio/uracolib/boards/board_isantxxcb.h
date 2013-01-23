@@ -104,11 +104,11 @@ Bootloader:
 #ifndef BOARD_MXISANT_H
 #define BOARD_MXISANT_H
 
-#if defined(mxisant900cb)
+#if defined(isant900cb)
 # define BOARD_TYPE (BOARD_MXISANT900CB)
 # define BOARD_NAME "mxisant900cb"
 # define RADIO_TYPE (RADIO_AT86RF212)
-#elif defined(mxisant2400cb)
+#elif defined(isant2400cb)
 # define BOARD_TYPE (BOARD_MXISANT2400CB)
 # define BOARD_NAME "mxisant2400cb"
 # define RADIO_TYPE (RADIO_AT86RF231)
