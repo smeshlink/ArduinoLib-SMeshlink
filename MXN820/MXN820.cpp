@@ -25,49 +25,40 @@ void MXN820::BuzzerID() {
 		buzzer_long();
 	}
 }
+
+//Buzzer according to value, Zero buzzer 10 times.
 void MXN820::BuzzerValue(int n) {
-	int count = 0;
+	uint16_t j, k, m, max, count;
 	Wire.begin(); // set up SEABO I2C support
 	Wire.beginTransmission(CONTROLCHIPADDRESS); // join I2C
 	Wire.write(0x03);
 	Wire.write((byte) 0x00);
 	Wire.endTransmission(); // leave I2C bus
-	uint8_t j, k;
-	if ((j = n / 10000) > 0) {
-		for (k = 0; k < j; k++) {
-			buzzer_long();
+	m = 10000;
+	count = 5;
+	if (n > 0) {
+		while (!(n / m)) {
+			count--;
+			m = m / 10;
 		}
-		n = n % 10000;
-		buzzer_short();
+		max = count;
+	} else {
+		count = 1;
+		max = 2;
 	}
 
-	if ((j = n / 1000) > 0) {
+	while (count > 0) {
+		j = n / m;
+		if (j == 0 && count < max)
+			j = 10;
 		for (k = 0; k < j; k++) {
 			buzzer_long();
 		}
-		n = n % 1000;
-		buzzer_short();
-	}
-
-	if ((j = n / 100) > 0) {
-		for (k = 0; k < j; k++) {
-			buzzer_long();
-		}
-		n = n % 100;
-		buzzer_short();
-	}
-
-	if ((j = n / 10) > 0) {
-		for (k = 0; k < j; k++) {
-			buzzer_long();
-		}
-		n = n % 10;
-		buzzer_short();
-	}
-	if ((j = n) > 0) {
-		for (k = 0; k < j; k++) {
-			buzzer_long();
-		}
+		n = n % m;
+		m = m / 10;
+		count--;
+		if (count > 0)
+			buzzer_short();
 	}
 }
 
