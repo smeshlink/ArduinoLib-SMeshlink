@@ -77,8 +77,6 @@ int MXSConfig::ReadAllMem(byte* memdata,byte size)
 }
 uint8_t MXSConfig::GetSensorType()
 {
-	Serial.write("Value:");
-	Serial.write(addr[0]);
 	if (addr[0] != 0x2D)
 	{
 		SearchAddress(addr);
