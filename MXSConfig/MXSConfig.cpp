@@ -77,13 +77,21 @@ int MXSConfig::ReadAllMem(byte* memdata,byte size)
 }
 uint8_t MXSConfig::GetSensorType()
 {
-	if (addr[0] != 0x2D)
+	pinMode(12, INPUT);
+	pinMode(13, INPUT);
+	pinMode(14, INPUT);
+	pinMode(15, INPUT);
+	pinMode(2, INPUT);
+
+	uint8_t tryed=0;
+	while (addr[0] != 0x2D && tryed<5)
 	{
 		SearchAddress(addr);
-
-		if (addr[0] != 0x2D)
-			return 0;
+		tryed++;
 	}
+	if (tryed==20)
+		return 0;
+
 	ds.reset();
 	ds.select(addr);
 	ds.write(0xF0, 1); // Read Memory

@@ -8,7 +8,8 @@
  */
 
 #include "Timer.h"
-#include "contiki-arduino.h"
+
+//#include "contiki-arduino.h"
 
 Timer::Timer(clock_time_t time, bool autoReset, void (*tick)(void *ctx), void *context)
 	: time(time), autoReset(autoReset), context(context), tick(tick) {
