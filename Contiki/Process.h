@@ -11,11 +11,7 @@
 #define PROCESS_H_
 
 extern "C" {
-#ifdef IDUINO
-#include "iduino.h"
-#else
 #include "contiki.h"
-#endif
 }
 
 class Process {

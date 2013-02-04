@@ -29,8 +29,7 @@
  * This file is part of the Contiki operating system.
  *
  */
-
-#include "iduino.h"
+#include "contiki.h"
 #include "sys/procinit.h"
 
 extern const struct process *procinit[];

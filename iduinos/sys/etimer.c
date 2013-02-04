@@ -44,7 +44,7 @@
  *
  */
 
-#include "iduino.h"
+#include "contiki.h"
 
 #include "sys/etimer.h"
 #include "sys/process.h"

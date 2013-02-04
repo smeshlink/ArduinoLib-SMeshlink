@@ -44,7 +44,7 @@
  *
  */
 
-#include "iduino.h"
+#include "contiki.h"
 #include "sys/clock.h"
 #include "sys/timer.h"
 

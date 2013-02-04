@@ -68,7 +68,7 @@
 #ifndef __CLOCK_H__
 #define __CLOCK_H__
 
-#include "iduino.h"
+#include "contiki.h"
 
 /**
  * A second, measured in system clock time.

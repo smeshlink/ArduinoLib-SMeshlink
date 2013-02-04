@@ -43,7 +43,7 @@
  */
 
 #include "sys/ctimer.h"
-#include "iduino.h"
+#include "contiki.h"
 #include "sys/list.h"
 
 LIST(ctimer_list);

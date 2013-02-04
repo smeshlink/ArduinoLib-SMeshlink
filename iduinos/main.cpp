@@ -1,5 +1,5 @@
 
-#include "iduino.h"
+#include "contiki.h"
 
 static char initialized = 0;
 

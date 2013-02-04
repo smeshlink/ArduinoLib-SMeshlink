@@ -52,7 +52,7 @@
  */
 #ifndef __PROCESS_H__
 #define __PROCESS_H__
-#include "iduino.h"
+#include "contiki.h"
 #include "sys/pt.h"
 
 

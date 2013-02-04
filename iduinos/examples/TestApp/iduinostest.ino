@@ -1,4 +1,4 @@
-#include "iduino.h"
+#include "contiki.h"
 #include "Arduino.h"
 
 PROCESS(leds_blink_process, "Hello world process");
