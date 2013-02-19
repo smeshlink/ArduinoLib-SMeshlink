@@ -1,12 +1,3 @@
-/* */
-#ifndef __IDUINO_H__
-#define __IDUINO_H__
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#define IDUINO 1
 /*
  * Copyright (c) 2004, Swedish Institute of Computer Science.
  * All rights reserved.
@@ -39,42 +30,37 @@ extern "C" {
  *
  * Author: Adam Dunkels <adam@sics.se>
  *
- * fredqian fredqian@bnu.edu.cn update
+ * fredqian fredqian@bnu.edu.cn smeshlink technology ltd. update
  */
-#include "stdint.h"
+#ifndef __CONTIKI_H__
+#define __CONTIKI_H__
 
-#ifndef IDUINO_VERSION_STRING
-#define IDUINO_VERSION_STRING "iDuino 1.0"
+#ifdef __cplusplus
+extern "C" {
 #endif
-#ifndef NULL
-#define NULL 0
-#endif /* NULL */
 
-
-#define CCIF
-#define CLIF
-
-
-#define CLOCK_CONF_SECOND 1024
-typedef unsigned long clock_time_t;
-#define CLOCK_LT(a,b)  ((signed short)((a)-(b)) < 0)
-#define INFINITE_TIME 0xffff
-
-#define MMEM_CONF_SIZE 256
-
-
-#define CSN            0
-
+//#include "contiki-version.h"
+#include "contiki-conf.h"
 
 #include "sys/process.h"
+//#include "sys/autostart.h"
+
 #include "sys/timer.h"
 #include "sys/ctimer.h"
 #include "sys/etimer.h"
+//#include "sys/rtimer.h"
+
 #include "sys/pt.h"
+
 #include "sys/procinit.h"
+
+//#include "sys/loader.h"
 #include "sys/clock.h"
-#include "sys/list.h"
-#include "sys/watchdog.h"
+
+//#include "sys/energest.h"
+
+#include "dev/watchdog.h"
+
 void setup();
 void initialize();
 void loop();

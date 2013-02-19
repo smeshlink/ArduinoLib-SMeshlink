@@ -44,7 +44,7 @@
  * Author: Adam Dunkels <adam@sics.se>
  *
  */
-#include "sys/list.h"
+#include "lib/list.h"
 
 #define NULL 0
 

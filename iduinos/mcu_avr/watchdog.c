@@ -60,7 +60,7 @@
 #define WATCHDOG_CONF_BALANCE 0
 #endif
 
-#include "sys/watchdog.h"
+#include "dev/watchdog.h"
 #include <avr/wdt.h>
 #include <avr/interrupt.h>
 

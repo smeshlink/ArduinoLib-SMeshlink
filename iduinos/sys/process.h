@@ -52,9 +52,9 @@
  */
 #ifndef __PROCESS_H__
 #define __PROCESS_H__
-#include "contiki.h"
-#include "sys/pt.h"
 
+#include "sys/pt.h"
+#include "sys/cc.h"
 
 typedef unsigned char process_event_t;
 typedef void *        process_data_t;

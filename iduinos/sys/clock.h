@@ -63,12 +63,13 @@
  * This file is part of the Contiki operating system.
  *
  * Author: Adam Dunkels <adam@sics.se>
- *
+ * *
+ * fredqian fredqian@bnu.edu.cn smeshlink technology ltd. update
  */
 #ifndef __CLOCK_H__
 #define __CLOCK_H__
 
-#include "contiki.h"
+#include "contiki-conf.h"
 
 /**
  * A second, measured in system clock time.
@@ -115,21 +116,37 @@ CCIF unsigned long clock_seconds(void);
  *
  */
 void clock_set_seconds(unsigned long sec);
-CCIF unsigned long clock_milliseconds(void);
 
-void
-clock_adjust_ticks(unsigned long howmany);
 /**
- * Set the value of the platform seconds.
- * \param sec   The value to set.
+ * Wait for a given number of ticks.
+ * \param t   How many ticks.
  *
  */
-void clock_set_milliseconds(unsigned long msec);
+void clock_wait(clock_time_t t);
+
+/**
+ * Delay a given number of microseconds.
+ * \param dt   How many microseconds to delay.
+ *
+ * \note Interrupts could increase the delay by a variable amount.
+ */
+void clock_delay_usec(uint16_t dt);
+
+/**
+ * Deprecated platform-specific routines.
+ *
+
+int clock_fine_max(void);
+unsigned short clock_fine(void);
+void clock_delay(unsigned int delay);
+ */
+
+
+//void clock_adjust_ms(unsigned long howmany);
+
 void clock_arch_sleepms(unsigned char howlong);
-uint8_t get_mcu_need_alive_state();
-void set_mcu_need_alive_state(uint8_t value);
-void push_mcu_need_alive_state(); //add 1
-void pop_mcu_need_alive_state(); //dec 1
+
+
 
 #endif /* __CLOCK_H__ */
 

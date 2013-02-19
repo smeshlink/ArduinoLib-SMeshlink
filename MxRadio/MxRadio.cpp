@@ -95,38 +95,49 @@ void cMxRadio::begin(channel_t chan)
 	begin(chan, 0);
 }
 
+void cMxRadio::begin(channel_t chan,uint16_t panid,uint16_t localaddress,bool needackval,bool autotxval,bool autorxval,char autoretrycount)
+{
+	setautotx=autotxval;
+		setautorx=autorxval;
+		needack=needackval;
+		radio_init(rxFrameBuffer, MAX_FRAME_SIZE);
+		//////////////////////////////
+	#ifdef SR_MAX_FRAME_RETRES
+		trx_bit_write(SR_MAX_FRAME_RETRES,autoretrycount & 0Xf);//for auto wake up
+		 //////////////////////////////
+	#endif
+
+
+		if(!needack)
+			txTmpBuffer[0] = 0x41;
+		else
+			txTmpBuffer[0] = 0x61; //ack required
+		txTmpBuffer[1] = 0x88;
+		txTmpBuffer[2] =  0;
+		txTmpBuffer[3]=(uint8_t)(panid & 0xFF );
+		txTmpBuffer[4]=(uint8_t)((panid>>8) & 0xFF );
+		txTmpBuffer[5] = 0xFF; //dest address low byte
+		txTmpBuffer[6] = 0xFF; //dest address hight byte
+		txTmpBuffer[7] = (uint8_t)(localaddress & 0xFF );
+		txTmpBuffer[8] = (uint8_t)((localaddress>>8) & 0xFF );
+		setParam(phyPanId,(uint16_t)panid );
+		setParam(phyShortAddr,(uint16_t)localaddress );
+
+		radio_set_param(RP_CHANNEL(chan));
+
+		// default to receiver
+		if (setautorx)
+			radio_set_state(STATE_RXAUTO);
+		else
+			radio_set_state(STATE_RX);
+	#ifdef ENABLE_DIG3_DIG4
+		trx_bit_write(SR_PA_EXT_EN, 1);
+	#endif
+}
 void cMxRadio::begin(channel_t chan,uint16_t panid,uint16_t localaddress,bool needackval,bool autotxval,bool autorxval)
 {
+	cMxRadio::begin(chan,panid,localaddress,needackval,autotxval,autorxval,4);
 
-	setautotx=autotxval;
-	setautorx=autorxval;
-	needack=needackval;
-	radio_init(rxFrameBuffer, MAX_FRAME_SIZE);
-	if(!needack)
-		txTmpBuffer[0] = 0x41;
-	else
-		txTmpBuffer[0] = 0x61; //ack required
-	txTmpBuffer[1] = 0x88;
-	txTmpBuffer[2] =  0;
-	txTmpBuffer[3]=(uint8_t)(panid & 0xFF );
-	txTmpBuffer[4]=(uint8_t)((panid>>8) & 0xFF );
-	txTmpBuffer[5] = 0xFF; //dest address low byte
-	txTmpBuffer[6] = 0xFF; //dest address hight byte
-	txTmpBuffer[7] = (uint8_t)(localaddress & 0xFF );
-	txTmpBuffer[8] = (uint8_t)((localaddress>>8) & 0xFF );
-	setParam(phyPanId,(uint16_t)panid );
-	setParam(phyShortAddr,(uint16_t)localaddress );
-
-	radio_set_param(RP_CHANNEL(chan));
-
-	// default to receiver
-	if (setautorx)
-		radio_set_state(STATE_RXAUTO);
-	else
-		radio_set_state(STATE_RX);
-#ifdef ENABLE_DIG3_DIG4
-	trx_bit_write(SR_PA_EXT_EN, 1);
-#endif
 }
 void cMxRadio::sendFrame(uint16_t destaddress,bool needackval,uint8_t* frm, uint8_t len)
 {
@@ -816,7 +827,7 @@ int8_t cMxRadio::getEdNow()
  *
  * @param timeout iterations to countdown before timeout
  */
-inline void cMxRadio::waitTxDone(uint16_t timeout)
+void cMxRadio::waitTxDone(uint16_t timeout)
 {
 	volatile uint16_t cnt = timeout;
 	while (txIsBusy && cnt--);

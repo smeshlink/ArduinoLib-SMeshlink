@@ -44,7 +44,7 @@
 
 #include "sys/ctimer.h"
 #include "contiki.h"
-#include "sys/list.h"
+#include "lib/list.h"
 
 LIST(ctimer_list);
 

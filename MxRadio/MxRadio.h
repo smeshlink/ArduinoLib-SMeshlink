@@ -76,6 +76,7 @@ class cMxRadio
 	public:
 		cMxRadio();
 		void begin(channel_t);
+		void begin(channel_t,uint16_t,uint16_t,bool,bool,bool,char);
 		void begin(channel_t,uint16_t,uint16_t,bool,bool,bool);
 		void begin(channel_t, uint8_t*);
 		void setFrameHeader(uint8_t*);
