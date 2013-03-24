@@ -13,4 +13,5 @@ Arduino Library including function belows:
 	6Lowpan ability;
 	Pthread ability;
 	Coap ability;
+	LowPower Mesh ability;
 	......

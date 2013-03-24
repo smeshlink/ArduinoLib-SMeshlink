@@ -114,7 +114,7 @@ Bootloader:
 #undef TRX_IF_RFA1
 
 #ifndef DEFAULT_SPI_RATE
-# define DEFAULT_SPI_RATE  (SPI_RATE_1_4)
+# define DEFAULT_SPI_RATE  (SPI_RATE_1_8)
 #endif
 
 /*=== Hardware Components ============================================*/
