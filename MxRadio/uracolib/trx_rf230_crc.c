@@ -76,7 +76,7 @@
 #include <stdbool.h>
 #include <util/crc16.h>
 
-#if !defined(TRX_IF_RFA1)
+#if !defined(TRX_IF_RFA1) && ! defined(TRX_IF_RFR2)
 /* === Globals ============================================================= */
 
 uint8_t trx_frame_read_crc(uint8_t *data, uint8_t datasz, bool *crc_ok)

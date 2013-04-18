@@ -41,7 +41,7 @@
 #include "radio.h"
 #include "transceiver.h"
 
-#if defined(TRX_IF_RFA1)
+#if defined(TRX_IF_RFA1) ||  defined(TRX_IF_RFR2)
 /* === globals ============================================================= */
 static radio_status_t radiostatus;
 //trx_param_t PROGMEM radio_cfg_flash = RADIO_CFG_DATA;

@@ -60,6 +60,11 @@
       RADIO_TYPE == RADIO_ATMEGA128RFA1_C ||\
       RADIO_TYPE == RADIO_ATMEGA128RFA1_D
 # include "atmega_rfa1.h"
+#elif RADIO_TYPE == RADIO_ATMEGA256RFR2_A ||\
+      RADIO_TYPE == RADIO_ATMEGA256RFR2_B ||\
+      RADIO_TYPE == RADIO_ATMEGA256RFR2_C
+# include "atmega_rfr2.h"
+
 #else
 # error "RADIO_TYPE is not defined or wrong"
 #endif
@@ -206,7 +211,7 @@ typedef enum
 extern "C" {
 #endif
 
-#if !defined(TRX_IF_RFA1)
+#if !defined(TRX_IF_RFA1) && ! defined(TRX_IF_RFR2)
 /**
  * @brief
  *    SPI Initialization (RADIO_TYPE == AT86RF230)

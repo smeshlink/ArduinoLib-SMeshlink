@@ -17,7 +17,7 @@ void MxTimer2::set(unsigned long units, unsigned int resolution, void (*f)()) {
 	else
 		time_units = units;
 	func = f;
-#if defined (__AVR_ATmega1284P__) || (__AVR_AT90USB1287__) || (__AVR_ATmega1281__) || defined (__AVR_ATmega128RFA1__)
+#if defined (__AVR_ATmega1284P__) || defined (__AVR_AT90USB1287__) || defined (__AVR_ATmega1281__) || defined (__AVR_ATmega128RFA1__) || defined(__AVR_ATmega256RFR2__)
 	cli();
 	ASSR |= (1 << AS2);
 	TCCR2A =(1<<WGM21);
@@ -38,13 +38,13 @@ void MxTimer2::set(unsigned long units, unsigned int resolution, void (*f)()) {
 void MxTimer2::start() {
 	count = 0;
 	overflowing = 0;
-#if defined (__AVR_ATmega1284P__) || (__AVR_AT90USB1287__) || (__AVR_ATmega1281__) || defined (__AVR_ATmega128RFA1__)
+#if defined (__AVR_ATmega1284P__) || defined(__AVR_AT90USB1287__) || defined(__AVR_ATmega1281__) || defined (__AVR_ATmega128RFA1__)  || defined(__AVR_ATmega256RFR2__)
 	TCNT2 = 0;
 	TIMSK2 = _BV (OCIE2A); //ÆôÓÃÖÐ¶Ï
 #endif
 }
 void MxTimer2::stop() {
-#if defined (__AVR_ATmega1284P__) || (__AVR_AT90USB1287__) || (__AVR_ATmega1281__) || defined (__AVR_ATmega128RFA1__)
+#if defined (__AVR_ATmega1284P__) || defined(__AVR_AT90USB1287__) || defined(__AVR_ATmega1281__) || defined (__AVR_ATmega128RFA1__)
 	TIMSK2 &= ~_BV (OCIE2A); //½ûÖ¹ÖÐ¶Ï
 #endif
 }

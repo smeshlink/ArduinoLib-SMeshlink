@@ -63,7 +63,9 @@ extern "C" {
 
 void setup();
 void initialize();
-void loop();
+void loop(void) __attribute__((weak));
+
+//void loop();
 
 #ifdef __cplusplus
 }

@@ -15,7 +15,7 @@ initialize(void)
 
 	process_init();
 	process_start(&etimer_process, NULL);
-	//ctimer_init();
+	ctimer_init();
 }
 int
 main(void)
@@ -27,7 +27,7 @@ main(void)
 	while(1) {
 		process_run();
 		watchdog_periodic();
-		loop();
+		if (loop) loop();
 	}
 	return 0;
 }

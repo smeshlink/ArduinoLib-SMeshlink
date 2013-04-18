@@ -43,7 +43,7 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
-#if defined(TRX_IF_RFA1)
+#if defined(TRX_IF_RFA1) || defined(TRX_IF_RFR2)
 
 /* === macros ============================================ */
 

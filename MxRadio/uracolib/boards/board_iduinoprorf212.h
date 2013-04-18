@@ -86,9 +86,9 @@ Bootloader:
 
 #ifndef BOARD_IDUINORF212_H
 #define BOARD_IDUINORF212_H
-#if defined(iduinorf212)
-# define BOARD_TYPE BOARD_IDUINORF212
-# define BOARD_NAME "iduinorf212"
+#if defined(iduinoprorf212)
+# define BOARD_TYPE BOARD_IDUINOPRORF212
+# define BOARD_NAME "iduinoprorf212"
 # define RADIO_TYPE (RADIO_AT86RF212)
 #endif
 
@@ -96,7 +96,7 @@ Bootloader:
 
 
 
-#if BOARD_TYPE == BOARD_IDUINORF212
+#if BOARD_TYPE == BOARD_IDUINOPRORF212
 # define LED_PORT      PORTD
 # define LED_DDR       DDRD
 # define LED_MASK      (0xE0)

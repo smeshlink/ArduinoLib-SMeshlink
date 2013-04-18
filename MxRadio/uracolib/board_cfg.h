@@ -99,6 +99,8 @@
 #define BOARD_IDUINORFA1 (110)
 #define BOARD_IDUINORF212 (111)
 
+#define BOARD_IDUINOPRORFR2 (120)
+#define BOARD_IDUINOPRORF212 (121)
 
 
 /* === BOARD INCLUDES === */
@@ -125,6 +127,14 @@
 #elif defined(iduinorf212)
 # define BOOT_LOADER_ADDRESS (0xf000)
 # include "boards/board_iduinorf212.h"
+
+#elif defined(iduinoprorfr2)
+# define BOOT_LOADER_ADDRESS (0xf000)
+# include "boards/board_iduinoprorfr2.h"
+
+#elif defined(iduinoprorf212)
+# define BOOT_LOADER_ADDRESS (0xf000)
+# include "boards/board_iduinoprorf212.h"
 
 #elif defined(mx231cb)
 # define BOOT_LOADER_ADDRESS (0xf000)
