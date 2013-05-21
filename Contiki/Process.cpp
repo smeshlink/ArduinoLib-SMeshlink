@@ -50,6 +50,16 @@ Process::Process(const char *name) {
 	process_pt = &_process.pt;
 }
 
+Process::Process(PT_THREAD((*target)(struct pt *process_pt, process_event_t ev, process_data_t data)), const char *name)
+	: _target(target) {
+	_process.next = NULL;
+#if !PROCESS_CONF_NO_PROCESS_NAMES
+	_process.name = name;
+#endif
+	_process.thread = process_thread_process_manager;
+	process_pt = &_process.pt;
+}
+
 Process::~Process() {
 	process_exit(&_process);
 }
@@ -58,4 +68,8 @@ void Process::run(const char *arg) {
 	initialize();
 	listAdd(this);
 	process_start(&_process, arg);
+}
+
+PT_THREAD(Process::doRun()) {
+	return _target ? _target(process_pt, ev, data) : 0;
 }
