@@ -7,7 +7,9 @@
 #elif defined(isant900cb)
 #define DATAPIN  35  //pe3
 #define CLOCKPIN 31 //Pb7
-
+#elif defined(iduinorfa1)
+#define DATAPIN  23  //pD5
+#define CLOCKPIN 25 //PD6
 #endif
 #include <SHT1x.h>
 SHT1x _MXS1201(DATAPIN, CLOCKPIN);

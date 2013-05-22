@@ -5,12 +5,12 @@
    modification, are permitted provided that the following conditions
    are met:
 
-   * Redistributions of source code must retain the above copyright
+ * Redistributions of source code must retain the above copyright
      notice, this list of conditions and the following disclaimer.
-   * Redistributions in binary form must reproduce the above copyright
+ * Redistributions in binary form must reproduce the above copyright
      notice, this list of conditions and the following disclaimer in the
      documentation and/or other materials provided with the distribution.
-   * Neither the name of the authors nor the names of its contributors
+ * Neither the name of the authors nor the names of its contributors
      may be used to endorse or promote products derived from this software
      without specific prior written permission.
 
@@ -25,7 +25,7 @@
    CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
    ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
    POSSIBILITY OF SUCH DAMAGE. */
-   
+
 #include "MxRadio.h"
 #include "MxRadioEvents.h"
 //#define radio_set_state radio_force_state
@@ -98,41 +98,41 @@ void cMxRadio::begin(channel_t chan)
 void cMxRadio::begin(channel_t chan,uint16_t panid,uint16_t localaddress,bool needackval,bool autotxval,bool autorxval,char autoretrycount)
 {
 	setautotx=autotxval;
-		setautorx=autorxval;
-		needack=needackval;
-		radio_init(rxFrameBuffer, MAX_FRAME_SIZE);
-		//////////////////////////////
-	#ifdef SR_MAX_FRAME_RETRES
-		trx_bit_write(SR_MAX_FRAME_RETRES,autoretrycount & 0Xf);//for auto wake up
-		 //////////////////////////////
-	#endif
+	setautorx=autorxval;
+	needack=needackval;
+	radio_init(rxFrameBuffer, MAX_FRAME_SIZE);
+	//////////////////////////////
+#ifdef SR_MAX_FRAME_RETRES
+	trx_bit_write(SR_MAX_FRAME_RETRES,autoretrycount & 0Xf);//for auto wake up
+	//////////////////////////////
+#endif
 
 
-		if(!needack)
-			txTmpBuffer[0] = 0x41;
-		else
-			txTmpBuffer[0] = 0x61; //ack required
-		txTmpBuffer[1] = 0x88;
-		txTmpBuffer[2] =  0;
-		txTmpBuffer[3]=(uint8_t)(panid & 0xFF );
-		txTmpBuffer[4]=(uint8_t)((panid>>8) & 0xFF );
-		txTmpBuffer[5] = 0xFF; //dest address low byte
-		txTmpBuffer[6] = 0xFF; //dest address hight byte
-		txTmpBuffer[7] = (uint8_t)(localaddress & 0xFF );
-		txTmpBuffer[8] = (uint8_t)((localaddress>>8) & 0xFF );
-		setParam(phyPanId,(uint16_t)panid );
-		setParam(phyShortAddr,(uint16_t)localaddress );
+	if(!needack)
+		txTmpBuffer[0] = 0x41;
+	else
+		txTmpBuffer[0] = 0x61; //ack required
+	txTmpBuffer[1] = 0x88;
+	txTmpBuffer[2] =  0;
+	txTmpBuffer[3]=(uint8_t)(panid & 0xFF );
+	txTmpBuffer[4]=(uint8_t)((panid>>8) & 0xFF );
+	txTmpBuffer[5] = 0xFF; //dest address low byte
+	txTmpBuffer[6] = 0xFF; //dest address hight byte
+	txTmpBuffer[7] = (uint8_t)(localaddress & 0xFF );
+	txTmpBuffer[8] = (uint8_t)((localaddress>>8) & 0xFF );
+	setParam(phyPanId,(uint16_t)panid );
+	setParam(phyShortAddr,(uint16_t)localaddress );
 
-		radio_set_param(RP_CHANNEL(chan));
+	radio_set_param(RP_CHANNEL(chan));
 
-		// default to receiver
-		if (setautorx)
-			radio_set_state(STATE_RXAUTO);
-		else
-			radio_set_state(STATE_RX);
-	#ifdef ENABLE_DIG3_DIG4
-		trx_bit_write(SR_PA_EXT_EN, 1);
-	#endif
+	// default to receiver
+	if (setautorx)
+		radio_set_state(STATE_RXAUTO);
+	else
+		radio_set_state(STATE_RX);
+#ifdef ENABLE_DIG3_DIG4
+	trx_bit_write(SR_PA_EXT_EN, 1);
+#endif
 }
 void cMxRadio::begin(channel_t chan,uint16_t panid,uint16_t localaddress,bool needackval,bool autotxval,bool autorxval)
 {
@@ -295,7 +295,7 @@ uint8_t* cMxRadio::onReceiveFrame(uint8_t len, uint8_t* frm, uint8_t lqi, int8_t
 	if (hasAttachedRxEvent == 0)
 	{
 		// no event handler, so write it into the FIFO
-		
+
 		if (len >= HeadSize-1)
 		{
 			// frame header exists
@@ -321,7 +321,7 @@ uint8_t* cMxRadio::onReceiveFrame(uint8_t len, uint8_t* frm, uint8_t lqi, int8_t
 		{
 			// frame header does not exist
 			// copy everything
-			
+
 			for (uint8_t i = 0; i < len; i++)
 			{
 				uint16_t j = ((uint16_t)((uint16_t)rxRingBufferHead + 1)) % ZR_FIFO_SIZE;
@@ -338,7 +338,7 @@ uint8_t* cMxRadio::onReceiveFrame(uint8_t len, uint8_t* frm, uint8_t lqi, int8_t
 				}
 			}
 		}
-		
+
 		return rxRingBuffer;
 	}
 	else
@@ -454,7 +454,8 @@ void cMxRadio::txFrame(uint8_t* frm, uint8_t len)
 void cMxRadio::beginTransmission()
 {
 	usedBeginTransmission = 1;
-
+	txTmpBuffer[5]= 0xFF;
+	txTmpBuffer[6]= 0XFF;
 	// add frame header
 	txTmpBufferLength = HeadSize;
 }
@@ -494,6 +495,13 @@ void cMxRadio::endTransmission()
 	//if broadcase ,cant need ack
 	if(txTmpBuffer[5]==0xff && txTmpBuffer[5]==0xff)
 		txTmpBuffer[0]=txTmpBuffer[0]&0xdf;
+	else
+	{
+		if(!needack)
+			txTmpBuffer[0] = 0x41;
+		else
+			txTmpBuffer[0] = 0x61; //ack required
+	}
 	radio_send_frame(txTmpBufferLength, txTmpBuffer, 0);
 #ifdef ZR_TXWAIT_AFTER
 	waitTxDone(0xFFFF);
@@ -740,10 +748,10 @@ void cMxRadio::setChannel(channel_t chan)
  */
 int8_t cMxRadio::getRssiNow()
 {
-    int16_t rssi = ((int16_t)(trx_reg_read(RG_PHY_RSSI) & 0x1F)); // mask only important bits
-    rssi = (rssi == 0) ? (RSSI_BASE_VAL - 1) : ((rssi < 28) ? ((rssi - 1) * 3 + RSSI_BASE_VAL) : -9);
-    // if 0, then rssi < RSSI_BASE_VAL, if 28, then >= -10
-	
+	int16_t rssi = ((int16_t)(trx_reg_read(RG_PHY_RSSI) & 0x1F)); // mask only important bits
+	rssi = (rssi == 0) ? (RSSI_BASE_VAL - 1) : ((rssi < 28) ? ((rssi - 1) * 3 + RSSI_BASE_VAL) : -9);
+	// if 0, then rssi < RSSI_BASE_VAL, if 28, then >= -10
+
 	return rssi;
 }
 
@@ -761,10 +769,10 @@ int8_t cMxRadio::getRssiNow()
  */
 int8_t cMxRadio::getLastRssi()
 {
-    int16_t rssi = ((int16_t)(temprssi & 0x1F)); // mask only important bits
-    rssi = (rssi == 0) ? (RSSI_BASE_VAL - 1) : ((rssi < 28) ? ((rssi - 1) * 3 + RSSI_BASE_VAL) : -9);
-    // if 0, then rssi < RSSI_BASE_VAL, if 28, then >= -10
-	
+	int16_t rssi = ((int16_t)(temprssi & 0x1F)); // mask only important bits
+	rssi = (rssi == 0) ? (RSSI_BASE_VAL - 1) : ((rssi < 28) ? ((rssi - 1) * 3 + RSSI_BASE_VAL) : -9);
+	// if 0, then rssi < RSSI_BASE_VAL, if 28, then >= -10
+
 	return rssi;
 }
 

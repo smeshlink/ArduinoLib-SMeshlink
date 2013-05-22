@@ -39,6 +39,7 @@
 #include <avr/pgmspace.h>
 #include "radio.h"
 #include "transceiver.h"
+#include <Arduino.h>
 /* === globals ============================================================= */
 #if ! defined(TRX_IF_RFA1) && ! defined(TRX_IF_RFR2)
 static radio_status_t radiostatus;
@@ -107,7 +108,8 @@ int8_t ed;
  */
 void radio_irq_handler(uint8_t cause)
 {
-    if (cause & TRX_IRQ_TRX_END)
+
+	if (cause & TRX_IRQ_TRX_END)
     {
         if (STATE_RX == radiostatus.state ||
             STATE_RXAUTO == radiostatus.state)

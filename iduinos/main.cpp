@@ -1,5 +1,13 @@
 
 #include "contiki.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+void initialize();
+#ifdef __cplusplus
+} // extern "C"
+#endif
 static char initialized = 0;
 void
 initialize(void)
@@ -23,6 +31,7 @@ main(void)
 
 
 	initialize();
+
 	setup();
 	while(1) {
 		process_run();

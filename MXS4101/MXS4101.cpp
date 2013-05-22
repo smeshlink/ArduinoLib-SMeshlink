@@ -7,6 +7,8 @@
 #define PDATAPIN 13 //PD5
 #elif defined(isant900cb)
 #define PDATAPIN  31  //Pb7
+#elif defined(iduinorfa1)
+#define PDATAPIN 24 //PD6
 #endif
 
 

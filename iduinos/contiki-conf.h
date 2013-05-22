@@ -36,7 +36,7 @@
 #define __CONTIKI_CONF_H__
 
 #define IDUINO 1
-#define LOWPOWER 1
+#define LOWPOWER 0
 #include "stdint.h"
 #ifndef IDUINO_VERSION_STRING
 #define IDUINO_VERSION_STRING "iDuino 1.0"
@@ -50,7 +50,7 @@
 #define CLIF
 
 
-#define CLOCK_CONF_SECOND 1024
+#define CLOCK_CONF_SECOND 1024L
 typedef unsigned long clock_time_t;
 #define CLOCK_LT(a,b)  ((signed short)((a)-(b)) < 0)
 #define INFINITE_TIME 0xffff

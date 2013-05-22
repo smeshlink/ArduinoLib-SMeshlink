@@ -7,6 +7,8 @@
 #define ONE_WIRE_BUS 13 //PD5
 #elif defined(isant900cb)
 #define ONE_WIRE_BUS 31 //PB7
+#elif defined(iduinorfa1)
+#define ONE_WIRE_BUS  23  //pd5
 #endif
 
 OneWire oneWire(ONE_WIRE_BUS);

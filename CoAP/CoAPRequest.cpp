@@ -53,7 +53,7 @@ unsigned int CoAPRequest::getContentType() {
 	return REST.get_header_content_type(request);
 }
 
-int CoAPRequest::getPayload(uint8_t **payload) {
+int CoAPRequest::getPayload(const uint8_t **payload) {
 	return REST.get_request_payload(request, payload);
 }
 

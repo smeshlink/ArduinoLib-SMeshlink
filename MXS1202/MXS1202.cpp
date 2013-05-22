@@ -6,6 +6,8 @@
 #define ONE_WIRE_BUS2 13 //PD5
 #elif defined(isant900cb)
 #define ONE_WIRE_BUS2 31 //PB7
+#elif defined(iduinorfa1)
+#define ONE_WIRE_BUS2 23 //PD5
 #endif
 
 #define  COM_OUT pinMode(ONE_WIRE_BUS2,OUTPUT)

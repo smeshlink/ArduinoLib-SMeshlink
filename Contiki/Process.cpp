@@ -8,7 +8,15 @@
  */
 
 #include "Process.h"
-//#include "contiki-arduino.h"
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+void initialize();
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 Process* Process::list = NULL;
 

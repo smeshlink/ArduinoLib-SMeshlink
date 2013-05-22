@@ -8,6 +8,10 @@
 #elif defined(isant900cb)
 #define DATAPIN  35  //pe3
 #define CLOCKPIN 31 //Pb7
+#elif defined(iduinorfa1)
+#define DATAPIN  23  //pd5
+#define CLOCKPIN 24 //Pd6
+
 #endif
 #define MXS1501ADDRESS  0x4A
 softI2C _MXS1501(DATAPIN, CLOCKPIN, MXS1501ADDRESS);

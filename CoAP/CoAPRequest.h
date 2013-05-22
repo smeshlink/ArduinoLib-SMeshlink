@@ -21,6 +21,7 @@ extern "C" {
 #if WITH_COAP == 3
 #include "er-coap-03.h"
 #define CONTENT_2_05 OK_200
+//#define REST coap_rest_implementation
 #elif WITH_COAP == 7
 #include "er-coap-07.h"
 #else
@@ -42,7 +43,7 @@ public:
 	uint8_t getId();
 	int getQuery(const char **value);
 	unsigned int getContentType();
-	int getPayload(uint8_t **payload);
+	int getPayload(const uint8_t **payload);
 	int getHost(const char **host);
 	int getAccept(const uint16_t **accept);
 	int getQueryVariable(const char *name, const char **value);

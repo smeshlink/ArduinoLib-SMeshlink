@@ -9,7 +9,13 @@
 
 #include "Timer.h"
 
-//#include "contiki-arduino.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+void initialize();
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 Timer::Timer(clock_time_t time, bool autoReset, void (*tick)(void *ctx), void *context)
 	: time(time), autoReset(autoReset), context(context), tick(tick) {
@@ -33,4 +39,8 @@ void Timer::ctimer_callback(void *ctx) {
 	timer->tick(timer->context);
 	if (timer->autoReset)
 		ctimer_reset(&timer->_ctimer);
+}
+void Timer::setTime(clock_time_t time)
+{
+	timer_set(&_ctimer.etimer.timer,time);
 }

@@ -8,6 +8,8 @@
 #define CONFIGONEWIRE 12 //PD4
 #elif defined(isant900cb)
 #define CONFIGONEWIRE 5 //PD5
+#elif defined(iduinorfa1)
+#define CONFIGONEWIRE 23 //PD5
 #endif
 OneWire ds(CONFIGONEWIRE);
 byte MXSConfig::addr[8];
