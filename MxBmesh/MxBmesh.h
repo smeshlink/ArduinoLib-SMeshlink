@@ -10,11 +10,13 @@
 #include <Arduino.h>
 #include <MxRadio.h>
 #include <SerialCrc.h>
+#include <Queue.h>
+#include <EEPROM.h>
 #define DEBUG 1
-#define RELAYDELAY		50
+#define RELAYDELAY		5
 #define NODECOUNT_MAX		255
 #define SERIALMTU	256
-#define BROADCASTINTERVAL 60
+#define BROADCASTINTERVAL 90
 #define TIMER2TICKS 10 //this is timer period
 #define BROADCASTINTERVALPAST_MAX 5
 #define RSSI_STEP 6
@@ -46,21 +48,9 @@
 #define MAX_NB		25
 #define MAX_ROUTER		20
 #define PACKAGE_MAX		128
-#define	RXQUENEMAX 		100
+#define	RFQUENEMAX 		50
 #define	RETRYSEND_MAX 		5
-struct RxData
-{
-	byte rbuf[PACKAGE_MAX];
-	byte length;
-	byte payloadindex;
-	byte rssi;
-};
-struct Queue
-{
-	RxData rxData[RXQUENEMAX];
-	byte front;
-	byte rear;
-} ;
+
 struct neigbourinfo
 {
 	byte nodeid;
@@ -77,13 +67,13 @@ enum HDLCPacketType
 	XPACKET_START = 0x7E,    //!< Reserved for serial packetizer start code.
 	XPACKET_TEXT_MSG = 0xF8,    //!< Special id for sending text error messages.
 };
+
 class MXBMESH {
 private:
 
 	static byte dataupload_interval;
 	static byte dataupload_interval_count;// 0 means no upload data ,others means
 	static byte broadcast_interval_count;
-	static byte  packdataindex;
 	static byte  retrysend;
 
 
@@ -95,18 +85,15 @@ private:
 	static byte localaddress;
 	static channel_t localchannel;
 	static SERIALCRC serialcrc;
-	static Queue rxqueue;
+	static QUEUE rxqueue;
+	static QUEUE txqueue;
 	static void timer2function();
 	static void WriteSerialData(byte *ioData, byte startIndex, int len);
 	static void onXmitDone(radio_tx_done_t x);
 	static void serialpackage_send(uint8_t  *buf,byte len);
 	static void serialpackage_recieve(uint8_t  *buf,byte len);
 
-	static void init_queue();
-	static byte inqueue();
-	static byte dequeue();
-	static void undodequeue();
-	///+++++++++++++++++++++++++++++++
+		///+++++++++++++++++++++++++++++++
 	static neigbourinfo neigbour[MAX_NB];
 
 	static byte rxserialbuf[SERIALMTU];
@@ -115,6 +102,9 @@ private:
 	static uint8_t* recievehandler(uint8_t len, uint8_t* frm, uint8_t lqi, int8_t ed,uint8_t crc_fail);
 	static uint8_t hasuserintervaluploadfunction;
 	static void (*userintervaluploadfunction)();
+	static void handlerftx();
+	static void handlerfrx();
+	static void handleserialrx();
 public:
 	MXBMESH();
 	static void begin(channel_t chan,uint16_t localaddress,char autoretrycount,unsigned long baudrate);
