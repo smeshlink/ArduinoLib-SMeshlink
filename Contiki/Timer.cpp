@@ -40,7 +40,8 @@ void Timer::ctimer_callback(void *ctx) {
 	if (timer->autoReset)
 		ctimer_reset(&timer->_ctimer);
 }
-void Timer::setTime(clock_time_t time)
+void Timer::setTime(clock_time_t newtime)
 {
-	timer_set(&_ctimer.etimer.timer,time);
+	time=newtime;
+	ctimer_set(&_ctimer, time, ctimer_callback, this);
 }

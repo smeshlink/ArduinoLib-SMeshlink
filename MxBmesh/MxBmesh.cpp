@@ -256,13 +256,14 @@ void MXBMESH::begin(channel_t chan,uint16_t _localaddress,char autoretrycount,un
 	txqueue.init_queue();
 	byte eepromadress=0;
 	dataupload_interval=EEPROM.read(eepromadress);
-	Serial.write(dataupload_interval);
+	if (dataupload_interval==0xff)
+		dataupload_interval=0;
 	pathnode[0]=EEPROM.read(++eepromadress);
 	if (pathnode[0]!=0xff)
-	for (byte t=1;t<=pathnode[0];t++)
-	{
-		pathnode[t]=EEPROM.read(++eepromadress );
-	}
+		for (byte t=1;t<=pathnode[0];t++)
+		{
+			pathnode[t]=EEPROM.read(++eepromadress );
+		}
 
 
 }
@@ -400,7 +401,8 @@ void MXBMESH::handlerfrx()
 					break;
 				}
 			}
-			if (((uint16_t)lastrbseq+255)>rxqueue.RfData[packdataindex_rx].rbuf[INDEX_SEQUENCE] && lastrbseq!=rxqueue.RfData[packdataindex_rx].rbuf[INDEX_SEQUENCE] ) //handle before,every node broadcast one time
+
+			if ( (uint16_t)((uint16_t)lastrbseq+255)>=rxqueue.RfData[packdataindex_rx].rbuf[INDEX_SEQUENCE] && lastrbseq!=rxqueue.RfData[packdataindex_rx].rbuf[INDEX_SEQUENCE] ) //handle before,every node broadcast one time
 			{
 				int mynodehop=rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT];
 				lastrbseq=rxqueue.RfData[packdataindex_rx].rbuf[INDEX_SEQUENCE];
@@ -412,7 +414,7 @@ void MXBMESH::handlerfrx()
 				}
 				pathnode[0]=mynodehop;
 				pathnode[mynodehop]=SINKADDRESS;
-
+				// add my address to broadcast
 				rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT+rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT]]=srcaddress;
 				rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT]++;
 				rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT+rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT]]=BROADCASTADDR;
@@ -426,6 +428,7 @@ void MXBMESH::handlerfrx()
 				//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 				//MSGTYPE SRCADDR DESTADDR SEQ PATHCOUNT NODE1 NODE2 NODE3 NEIGBOUR_NODEID RSSI ... CRC
 				//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+				//+++++++++upload neigbour
 				if (localaddress!=0)
 				{
 					byte sendbuf[MAX_NB*2];
@@ -440,6 +443,8 @@ void MXBMESH::handlerfrx()
 					}
 					uploaddata(MSGTYPE_RU,sendbuf,sendbuflen);
 				}
+				//+++++++++++++++++++
+
 			}
 		}
 		break;

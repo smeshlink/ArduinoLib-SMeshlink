@@ -27,7 +27,7 @@ public:
 	virtual ~Timer();
 	void start();
 	void stop();
-	void setTime(clock_time_t time);
+	void setTime(clock_time_t newtime);
 private:
 	static void ctimer_callback(void *ctx);
 };
