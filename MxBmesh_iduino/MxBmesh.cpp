@@ -21,15 +21,17 @@ QUEUE MXBMESH::txqueue=QUEUE();
 neigbourinfo MXBMESH::neigbour[MAX_NB];
 byte MXBMESH::rxserialbuf[SERIALMTU];
 byte MXBMESH::rxserialbufindex=0;
-uint8_t MXBMESH::hasuserintervaluploadfunction=0;
-void (*MXBMESH::userintervaluploadfunction)();
-Timer MXBMESH::broadcast_neigbour_timer(CLOCK_SECOND * BROADCASTINTERVAL, true, broadcast_neigbour, NULL);
-Timer MXBMESH::data_upload_timer(CLOCK_SECOND * 10, true, data_upload, NULL);
-
+uint8_t MXBMESH::hasIntervalElapsedFunction=0;
+void (*MXBMESH::IntervalElapsedFunction)();
+uint8_t MXBMESH::hasDownloadDataFunction=0;
+void (*MXBMESH::DownloadDataFunction)(uint8_t* payload,uint8_t len);
 bool MXBMESH::islowpower=false;
 bool MXBMESH::needrecievebroadcastdata=false;
 byte MXBMESH::needrecievebroadcastdatadelaycount=0;
 bool MXBMESH::needchecksenddone=true;
+Timer MXBMESH::broadcast_neigbour_timer(CLOCK_SECOND * BROADCASTINTERVAL, true, broadcast_neigbour, NULL);
+Timer MXBMESH::data_upload_timer(CLOCK_SECOND * 10, true, data_upload, NULL);
+
 MXBMESH MxBmesh;
 
 MXBMESH::MXBMESH() {
@@ -52,22 +54,28 @@ void MXBMESH::broadcast_neigbour(void *ctx)
 			}
 		}
 	}
-	broadcastdata(MSGTYPE_NB,NULL,0);
+	if (!needrecievebroadcastdata)
+		broadcastdata(MSGTYPE_NB,NULL,0);
 }
 void MXBMESH::data_upload(void *ctx)
 {
-	if (hasuserintervaluploadfunction)
-		userintervaluploadfunction();
+	if (hasIntervalElapsedFunction)
+		IntervalElapsedFunction();
 	else
 		uploaddata(MSGTYPE_DU,"bmesh data test!");
 }
+///+++++++++++++++++++++++++++++++
 
-void MXBMESH::setuserintervaluploadfunction(void(*funct)())
+void MXBMESH::attachDownloadData(void(*funct)(uint8_t* payload,uint8_t len))
 {
-	userintervaluploadfunction=funct;
-	hasuserintervaluploadfunction=(funct == 0) ? 0 : 1;
+	DownloadDataFunction=funct;
+	hasDownloadDataFunction=(funct == 0) ? 0 : 1;
 }
-
+void MXBMESH::attachIntervalElapsed(void(*funct)())
+{
+	IntervalElapsedFunction=funct;
+	hasIntervalElapsedFunction=(funct == 0) ? 0 : 1;
+}
 void MXBMESH::WriteSerialData(byte *ioData, byte startIndex, int len)
 {
 	byte crcData[SERIALMTU];
@@ -234,7 +242,7 @@ void MXBMESH::onXmitDone(radio_tx_done_t x)
 }
 void MXBMESH::begin(channel_t chan,uint16_t _localaddress,char autoretrycount,unsigned long baudrate,bool powermode)
 {
-	//randomSeed(localaddress);
+	randomSeed(localaddress);
 	localaddress=_localaddress;
 	localchannel=chan;
 	islowpower=powermode;
@@ -254,6 +262,14 @@ void MXBMESH::begin(channel_t chan,uint16_t _localaddress,char autoretrycount,un
 	dataupload_interval=EEPROM.read(eepromadress);
 	if (dataupload_interval==0xff)
 		dataupload_interval=0;
+	else
+	{
+		if (dataupload_interval!=0)
+		{
+			data_upload_timer.setTime(CLOCK_SECOND*dataupload_interval);
+			data_upload_timer.start();
+		}
+	}
 	pathnode[0]=EEPROM.read(++eepromadress);
 	if (pathnode[0]!=0xff)
 		for (byte t=1;t<=pathnode[0];t++)
@@ -292,15 +308,31 @@ void MXBMESH::serialpackage_recieve(uint8_t  *buf,byte len) //
 		memcpy(txqueue.RfData[packetindex_tx].rbuf,buf+2,len-5);
 		txqueue.RfData[packetindex_tx].value.destaddress=0xff;
 		break;
-	case MSGTYPE_RD:  //download route message
+	case MSGTYPE_CMD_GETPOWER: //sinknode should shift last
+		byte sbuf[6];
+		sbuf[0]=MSGTYPE_CMD_GETPOWER;
+		sbuf[1]=0;
+		sbuf[2]=0;
+		sbuf[3]=0;
+		sbuf[4]=0; //pathcount
+		sbuf[5]=islowpower; //value
+		WriteSerialData(sbuf,0, 6);
+		break;
+	case MSGTYPE_CMD_LOWPOWER:
+	case MSGTYPE_CMD_HIGHPOWER:
+	case MSGTYPE_CMD_RD:  //download route message
 	case MSGTYPE_DD:
+	case MSGTYPE_DD_NEEDACK:
+		if (buf[2]==MSGTYPE_CMD_LOWPOWER)
+			islowpower=true;
+		else if (buf[2]==MSGTYPE_CMD_HIGHPOWER)
+			islowpower=false;
 		packetindex_tx=txqueue.inqueue();
 		if (packetindex_tx==RFQUENEMAX) //maybe full
 			return ;
 		txqueue.RfData[packetindex_tx].length=len-5;
 		memcpy(txqueue.RfData[packetindex_tx].rbuf,buf+2,len-5);
 		txqueue.RfData[packetindex_tx].value.destaddress=buf[2+INDEX_PATHCOUNT-INDEX_MSGTYPE+1];
-
 		break;
 	}
 	//Serial.write(txqueue.RfData[packetindex_tx].value.destaddress);
@@ -320,16 +352,7 @@ void MXBMESH::handlerftx()
 		else
 		{
 			if (txqueue.RfData[packdataindex_tx].rbuf[INDEX_SRCADDR]==localaddress) //start from me
-
-			{
-				if (!islowpower)
-					_delay_ms(RELAYDELAY);
-				else
-				{
-					MxRadio.setState(STATE_SLEEP,1);
-					clock_arch_sleepms(RELAYDELAY);
-				}
-			}
+				_delay_ms(random(RELAYDELAY));
 			MxRadio.beginTransmission(txqueue.RfData[packdataindex_tx].value.destaddress);
 		}
 		MxRadio.write(txqueue.RfData[packdataindex_tx].rbuf,txqueue.RfData[packdataindex_tx].length);
@@ -339,18 +362,12 @@ void MXBMESH::handlerftx()
 	{
 		if (txqueue.RfData[packdataindex_tx].value.destaddress!=0xff)
 		{
-			if (txqueue.RfData[packdataindex_tx].rbuf[INDEX_SRCADDR]==localaddress)
-				//				delay(RELAYDELAY);
-			{
-				MxRadio.setState(STATE_SLEEP,1);
-				clock_arch_sleepms(RELAYDELAY);
-			}
-
+			if (txqueue.RfData[packdataindex_tx].rbuf[INDEX_SRCADDR]==localaddress &&  localaddress!=SINKADDRESS)
+				_delay_ms(random(RELAYDELAY));
 			MxRadio.beginTransmission(txqueue.RfData[packdataindex_tx].value.destaddress);
 			MxRadio.write(txqueue.RfData[packdataindex_tx].rbuf,txqueue.RfData[packdataindex_tx].length);
 			needchecksenddone=true;
 			MxRadio.endTransmission();
-
 		}
 		else
 		{
@@ -363,7 +380,7 @@ void MXBMESH::handlerftx()
 				txqueue.RfData[packdataindex_tx].rbuf[INDEX_MSGTYPE-INDEX_MSGTYPE]=MSGTYPE_WAKEUP_SHIFT+msgtype;
 				MxRadio.write(txqueue.RfData[packdataindex_tx].rbuf,txqueue.RfData[packdataindex_tx].length);
 				MxRadio.endTransmission();
-			} while(millis() - _startMillis < WAKEUP_PREAMBLE_MS+4);
+			} while(millis() - _startMillis < WAKEUP_PREAMBLE_MS+WAKEUP_PREAMBLE_RELAY_MS);
 
 			MxRadio.beginTransmission();
 			txqueue.RfData[packdataindex_tx].rbuf[INDEX_MSGTYPE-INDEX_MSGTYPE]=msgtype;
@@ -379,6 +396,7 @@ void MXBMESH::handlerftx()
 }
 void MXBMESH::handlerfrx()
 {
+	byte ackdata[1];
 	byte nodeindex=0; //my node index in the path
 	byte pathcount=0; //my node to sink path count
 	byte packdataindex_rx=0,packdataindex_tx=0;
@@ -398,8 +416,7 @@ void MXBMESH::handlerfrx()
 	}
 	else
 	{
-		if (rxqueue.RfData[packdataindex_rx].rbuf[INDEX_MSGTYPE]!=MSGTYPE_RD && rxqueue.RfData[packdataindex_rx].rbuf[INDEX_MSGTYPE]!=MSGTYPE_RU && \
-				rxqueue.RfData[packdataindex_rx].rbuf[INDEX_MSGTYPE]!=MSGTYPE_DD && rxqueue.RfData[packdataindex_rx].rbuf[INDEX_MSGTYPE]!=MSGTYPE_DU &&  rxqueue.RfData[packdataindex_rx].rbuf[INDEX_MSGTYPE]!=MSGTYPE_RD_ACK )
+		if (rxqueue.RfData[packdataindex_rx].rbuf[INDEX_MSGTYPE]<MSGTYPE_RU || rxqueue.RfData[packdataindex_rx].rbuf[INDEX_MSGTYPE]>MSGTYPE_CMD_GETPOWER)
 			return;
 		if (rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT]>MAX_ROUTER || rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT]<1) //hop limit
 			return;
@@ -436,6 +453,20 @@ void MXBMESH::handlerfrx()
 		return;
 	}
 	//relay finished
+	//record path
+	if (messagetype==MSGTYPE_CMD_RD || messagetype==MSGTYPE_CMD_HIGHPOWER || messagetype==MSGTYPE_CMD_LOWPOWER || messagetype==MSGTYPE_DD || messagetype==MSGTYPE_DD_NEEDACK)
+	{
+		pathcount=nodeindex;
+		//record path
+		for ( nodeindex =1;nodeindex<=rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT];nodeindex++)
+		{
+			pathnode[pathcount-nodeindex]=rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT+nodeindex];
+			if (rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT+nodeindex]==localaddress)
+				break;
+		}
+		pathnode[0]=pathcount;
+		pathnode[pathcount]=SINKADDRESS;
+	}
 	switch (messagetype)
 	{
 	case MSGTYPE_RB: //finished
@@ -462,8 +493,9 @@ void MXBMESH::handlerfrx()
 						break;
 					pathnode[mynodehop-nodeindex]=rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT+nodeindex];
 				}
-				pathnode[0]=mynodehop;
-				pathnode[mynodehop]=SINKADDRESS;
+				pathnode[0]=nodeindex;
+				pathnode[1]=srcaddress;
+				pathnode[nodeindex]=SINKADDRESS;
 				// add my address to broadcast
 				rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT+rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT]]=srcaddress;
 				rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT]++;
@@ -498,19 +530,7 @@ void MXBMESH::handlerfrx()
 			}
 		}
 		break;
-	case MSGTYPE_RD: //download route ,every node in the path should handle,last node should ack
-		pathcount=nodeindex;
-
-		//record path
-		for ( nodeindex =1;nodeindex<=rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT];nodeindex++)
-		{
-			pathnode[pathcount-nodeindex]=rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT+nodeindex];
-			if (rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT+nodeindex]==localaddress)
-				break;
-
-		}
-		pathnode[0]=pathcount;
-		pathnode[pathcount]=SINKADDRESS;
+	case MSGTYPE_CMD_RD: //download route ,every node in the path should handle,last node should ack
 		dataupload_interval=rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT+rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT]+1];
 		if (dataupload_interval<10 && dataupload_interval>0)
 			dataupload_interval=10;//interval must big than 10s
@@ -519,7 +539,6 @@ void MXBMESH::handlerfrx()
 		{
 			data_upload_timer.setTime(CLOCK_SECOND*dataupload_interval);
 			data_upload_timer.start();
-
 		}
 		byte eepromadress;
 		eepromadress=0;
@@ -533,14 +552,43 @@ void MXBMESH::handlerfrx()
 			//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 			//MSGTYPE SRCADDR DESTADDR SEQ PATHCOUNT NODE1 NODE2 NODE3...  CRC
 			//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-			uploaddata(MSGTYPE_RD_ACK,NULL,0);
+			ackdata[0]=messagetype;
+			uploaddata(MSGTYPE_CMD_ACK,ackdata,1);
 		}
 		break;
+	case MSGTYPE_CMD_LOWPOWER:
+		islowpower=true;
+		if (rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT]==nodeindex)//本节点是目标节点
+		{
+			ackdata[0]=messagetype;
+			uploaddata(MSGTYPE_CMD_ACK,ackdata,1);
+		}
+		break;
+	case MSGTYPE_CMD_HIGHPOWER:
+		islowpower=false;
+		if (rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT]==nodeindex)//本节点是目标节点
+		{
+			ackdata[0]=messagetype;
+			uploaddata(MSGTYPE_CMD_ACK,ackdata,1);
+		}
+		break;
+
 	case MSGTYPE_DD:
 		if (rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT]==nodeindex)//本节点是目标节点
 		{
 			rxqueue.RfData[packdataindex_rx].payloadindex=INDEX_PATHCOUNT+nodeindex+1;
-			serialpackage_send(rxqueue.RfData[packdataindex_rx].rbuf,rxqueue.RfData[packdataindex_rx].length);
+			if (hasDownloadDataFunction)
+				DownloadDataFunction(rxqueue.RfData[packdataindex_rx].rbuf+INDEX_PATHCOUNT+rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT]+1,rxqueue.RfData[packdataindex_rx].length-(INDEX_PATHCOUNT+rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT]+3));
+		}
+		break;
+	case MSGTYPE_DD_NEEDACK:
+		if (rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT]==nodeindex)//本节点是目标节点
+		{
+			rxqueue.RfData[packdataindex_rx].payloadindex=INDEX_PATHCOUNT+nodeindex+1;
+			if (hasDownloadDataFunction)
+				DownloadDataFunction(rxqueue.RfData[packdataindex_rx].rbuf+INDEX_PATHCOUNT+rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT]+1,rxqueue.RfData[packdataindex_rx].length-(INDEX_PATHCOUNT+rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT]+3));
+			ackdata[0]=messagetype;
+			uploaddata(MSGTYPE_CMD_ACK,ackdata,1);
 		}
 		break;
 	case MSGTYPE_DU://data upload
@@ -594,13 +642,14 @@ void MXBMESH::handlerfrx()
 			}
 		}
 		break;
-	case MSGTYPE_RD_ACK:
-		if (rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT+rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT]]==SINKADDRESS)//本节点是目标节点
+	case MSGTYPE_CMD_ACK:
+		if (rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT]==nodeindex)//本节点是目标节点
 		{
 			rxqueue.RfData[packdataindex_rx].payloadindex=INDEX_PATHCOUNT+nodeindex+1;
 			serialpackage_send(rxqueue.RfData[packdataindex_rx].rbuf,rxqueue.RfData[packdataindex_rx].length);
 		}
 		break;
+
 	}
 
 }
@@ -652,26 +701,25 @@ void MXBMESH::poll()
 	handlerftx();
 	if (localaddress==SINKADDRESS)
 		return;
+	if (txqueue.peerqueue()!=RFQUENEMAX || rxqueue.peerqueue()!=RFQUENEMAX || !islowpower)
+		return;
 
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-	if (txqueue.peerqueue()!=RFQUENEMAX || rxqueue.peerqueue()!=RFQUENEMAX ) return;
-	if (localaddress!=0 && islowpower && !needrecievebroadcastdata  )
-	{
-		MxRadio.setState(STATE_SLEEP,1);
-		clock_arch_sleepms(WAKEUP_PREAMBLE_MS-WAKEUP_STAY_MS);
-	}
-	else if (localaddress!=0 && islowpower && (needrecievebroadcastdata && needrecievebroadcastdatadelaycount<=WAKEUP_PREAMBLE_MS /WAKEUP_STAY_MS))
+
+	if ((needrecievebroadcastdata && needrecievebroadcastdatadelaycount<=(WAKEUP_PREAMBLE_MS /WAKEUP_STAY_MS+1)))
 	{
 		needrecievebroadcastdatadelaycount++;
+
 	}
 	else
 	{
 		MxRadio.setState(STATE_SLEEP,1);
 		clock_arch_sleepms(WAKEUP_PREAMBLE_MS-WAKEUP_STAY_MS);
-		needrecievebroadcastdatadelaycount=0;
+		MxRadio.setState(STATE_RXAUTO);
 		needrecievebroadcastdata=false;
+		needrecievebroadcastdatadelaycount=0;
+
 	}
-	MxRadio.setState(STATE_RXAUTO,1);
 	_delay_ms(WAKEUP_STAY_MS);
 
 }

@@ -11,7 +11,7 @@ void (*MxTimer2::func)();
 volatile unsigned long MxTimer2::count;
 volatile char MxTimer2::overflowing;
 //设置分辨率，resolution表示1秒中断多少次，units表示在resolution分辨率下中断次数，f表示中断了//unit后需要执行的函数
-void MxTimer2::set(unsigned long units, unsigned int resolution, void (*f)()) {
+void MxTimer2::set(unsigned long units,  void (*f)()) {
 	if (units == 0)
 		time_units = 1;
 	else
@@ -22,7 +22,7 @@ void MxTimer2::set(unsigned long units, unsigned int resolution, void (*f)()) {
 	ASSR |= (1 << AS2);
 	TCCR2A =(1<<WGM21);
 
-	OCR2A = 32768/32/resolution - 1;
+	OCR2A = 0;
 	TCCR2B =3;//prescale=32
 
 	TCNT2 = 0;
@@ -58,6 +58,64 @@ void MxTimer2::_overflow() {
 		overflowing = 0;
 	}
 }
+
+/*---------------------------------------------------------------------------*/
+
+void MxTimer2::sleepms(unsigned char howlong)
+{
+	/* Deep Sleep for howlong rtimer ticks. This will stop all timers except
+	 * for TIMER2 which can be clocked using an external crystal.
+	 * Unfortunately this is an 8 bit timer; a lower prescaler gives higher
+	 * precision but smaller maximum sleep time.
+	 * Here a maximum 128msec (contikimac 8Hz channel check sleep) is assumed.
+	 * The rtimer and system clocks are adjusted to reflect the sleep time.
+	 */
+#include <avr/sleep.h>
+
+
+
+	/* Save TIMER2 configuration for clock.c is using it */
+	uint8_t savedTCNT2=TCNT2, savedTCCR2A=TCCR2A, savedTCCR2B = TCCR2B, savedOCR2A = OCR2A;
+
+	cli();
+	set_sleep_mode(SLEEP_MODE_PWR_SAVE);
+	TCCR2A = _BV(WGM21);
+	TCCR2B =((0<<CS22)|(1<<CS21)|(1<<CS20));
+
+	/* Set TIMER2 clock asynchronus from external source, CTC mode */
+	ASSR |= (1 << AS2);
+	//TCCR2A =(1<<WGM21);
+	// Prescale by  32 - 1024 ticks/sec, 250 msec max sleep
+	TCCR2A = _BV(WGM21);
+	TCCR2B =((0<<CS22)|(1<<CS21)|(1<<CS20));
+	OCR2A = howlong-1;
+
+	/* Reset timer count, wait for the write (which assures TCCR2x and OCR2A are finished) */
+	TCNT2 = 0;
+	while(ASSR & (1 << TCN2UB));
+
+	/* Enable TIMER2 output compare interrupt, sleep mode and sleep */
+	TIMSK2 |= (1 << OCIE2A);
+	SMCR |= (1 <<  SE);
+	sei();
+	/* Ensure no activity is suspending the low power mode
+	   before going to sleep. (edited by smeshlink) */
+	if (OCR2A) sleep_mode();
+	//...zzZZZzz...Ding!//
+
+	/* Disable sleep mode after wakeup, so random code cant trigger sleep */
+	SMCR  &= ~(1 << SE);
+	/* Restore clock.c configuration */
+	cli();
+	count += howlong;
+	TCCR2A = savedTCCR2A;
+	TCCR2B = savedTCCR2B;
+	OCR2A  = savedOCR2A;
+	TCNT2  = savedTCNT2;
+	sei();
+
+}
+
 ISR(TIMER2_COMPA_vect) {
 	MxTimer2::_overflow();
 }

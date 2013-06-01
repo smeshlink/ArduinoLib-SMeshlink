@@ -12,15 +12,22 @@
 #include <SerialCrc.h>
 #include <Queue.h>
 #include <EEPROM.h>
+#include <MxTimer2.h>
 #define DEBUG 1
+#define	RETRYSEND_MAX 		10
+#define	BROADCAST_COUNT 	60
+
 #define RELAYDELAY		5
 #define NODECOUNT_MAX		255
 #define SERIALMTU	256
 #define BROADCASTINTERVAL 90
 #define TIMER2TICKS 10 //this is timer period
-#define BROADCASTINTERVALPAST_MAX 5
+#define BROADCASTINTERVALPAST_MAX 4
 #define RSSI_STEP 6
 
+#define WAKEUP_PREAMBLE_MS 125
+#define WAKEUP_PREAMBLE_RELAY_MS 4
+#define WAKEUP_STAY_MS 2
 
 #define SINKADDRESS		0
 
@@ -31,10 +38,12 @@
 #define MSGTYPE_RU		4   //neigbour info up
 #define MSGTYPE_RD_ACK		5 //ack download route
 #define MSGTYPE_RU_ACK		6
-//#define MSGTYPE_MD		5   //commd down
+#define MSGTYPE_DD		7   //payload format start from data type 0 means collect 1-255 means auto upload interval
+#define MSGTYPE_DD_ACK		8
+#define MSGTYPE_DU		9
+#define MSGTYPE_DU_ACK		10
 
-#define MSGTYPE_DD		11   //payload format start from data type 0 means collect 1-255 means auto upload interval
-#define MSGTYPE_DU		12
+#define MSGTYPE_WAKEUP_SHIFT		16
 
 #define INDEX_MSGTYPE		9
 #define INDEX_SRCADDR		10
@@ -49,7 +58,7 @@
 #define MAX_ROUTER		20
 #define PACKAGE_MAX		128
 #define	RFQUENEMAX 		50
-#define	RETRYSEND_MAX 		5
+
 
 struct neigbourinfo
 {
@@ -100,20 +109,28 @@ private:
 	static byte rxserialbufindex;
 
 	static uint8_t* recievehandler(uint8_t len, uint8_t* frm, uint8_t lqi, int8_t ed,uint8_t crc_fail);
-	static uint8_t hasuserintervaluploadfunction;
-	static void (*userintervaluploadfunction)();
+	static uint8_t hasIntervalElapsedFunction;
+	static void (*IntervalElapsedFunction)();
+	static uint8_t hasDownloadDataFunction;
+	static void (*DownloadDataFunction)(uint8_t* payload,uint8_t len);
+
 	static void handlerftx();
 	static void handlerfrx();
 	static void handleserialrx();
+	static bool islowpower;
+	static bool needrecievebroadcastdata;
+	static bool needchecksenddone;
+	static byte needrecievebroadcastdatadelaycount;
 public:
 	MXBMESH();
-	static void begin(channel_t chan,uint16_t localaddress,char autoretrycount,unsigned long baudrate);
+	static void begin(channel_t chan,uint16_t localaddress,char autoretrycount,unsigned long baudrate,bool powermode=false);
 	static void poll();
 	static void uploaddata(byte msgtype,const uint8_t *buffer, size_t size);
 	static void uploaddata(byte msgtype,char* str);
 	static void broadcastdata(byte msgtype,const uint8_t *buffer, size_t size);
 	static void broadcastdata(byte msgtype,char* str);
-	static void setuserintervaluploadfunction(void(*)());
+	static void attachIntervalElapsed(void(*)());
+	static void attachDownloadData(void(*)(uint8_t* payload,uint8_t len));
 };
 extern MXBMESH MxBmesh;
 #endif /* MXBMESH_H_ */

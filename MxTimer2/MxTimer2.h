@@ -21,9 +21,10 @@ namespace MxTimer2 {
 	extern void (*func)();
 	extern volatile unsigned long count;
 	extern volatile char overflowing;
-	void set(unsigned long units,  unsigned int resolution,void (*f)());
+	void set(unsigned long units,void (*f)());
 	void start();
 	void stop();
 	void _overflow();
+	void sleepms(unsigned char howlong);
 }
 #endif

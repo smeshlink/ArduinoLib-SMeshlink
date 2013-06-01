@@ -26,25 +26,31 @@
 #define BROADCASTINTERVAL 90
 #define TIMER2TICKS 10 //this is timer period
 #define BROADCASTINTERVALPAST_MAX 4
-#define RSSI_STEP 6
+#define RSSI_STEP 0
 
 #define WAKEUP_PREAMBLE_MS 125
-#define WAKEUP_STAY_MS 2
+#define WAKEUP_PREAMBLE_RELAY_MS 4
+#define WAKEUP_STAY_MS 3
 
 #define SINKADDRESS		0
 
 #define BROADCASTADDR	255
 #define MSGTYPE_NB		1 //neighbour broadcast
 #define MSGTYPE_RB		2  //start route ,start from base broadcast
-#define MSGTYPE_RD		3   //route down select longest path,enable all the node in the path can recieve
-#define MSGTYPE_RU		4   //neigbour info up
-#define MSGTYPE_RD_ACK		5 //ack download route
-#define MSGTYPE_RU_ACK		6
-#define MSGTYPE_WAKEUP_SHIFT		16
-//#define MSGTYPE_MD		5   //commd down
+#define MSGTYPE_RU		3   //neigbour info up
+#define MSGTYPE_RU_ACK	4
+#define MSGTYPE_DU		5
+#define MSGTYPE_DU_ACK	6
+#define MSGTYPE_DD		7   //payload format start from data type 0 means collect 1-255 means auto upload interval
+#define MSGTYPE_DD_NEEDACK		8   //payload format start from data type 0 means collect 1-255 means auto upload interval
 
-#define MSGTYPE_DD		11   //payload format start from data type 0 means collect 1-255 means auto upload interval
-#define MSGTYPE_DU		12
+#define MSGTYPE_CMD_ACK 10   //commd down ack
+#define MSGTYPE_CMD_RD	11   //route down select longest path,enable all the node in the path can recieve
+#define MSGTYPE_CMD_LOWPOWER     12   //commd down
+#define MSGTYPE_CMD_HIGHPOWER    13   //commd down
+#define MSGTYPE_CMD_GETPOWER     14   //commd down
+
+#define MSGTYPE_WAKEUP_SHIFT		0xF0
 
 #define INDEX_MSGTYPE		9
 #define INDEX_SRCADDR		10
@@ -114,8 +120,11 @@ private:
 	static byte rxserialbufindex;
 
 	static uint8_t* recievehandler(uint8_t len, uint8_t* frm, uint8_t lqi, int8_t ed,uint8_t crc_fail);
-	static uint8_t hasuserintervaluploadfunction;
-	static void (*userintervaluploadfunction)();
+	static uint8_t hasIntervalElapsedFunction;
+	static void (*IntervalElapsedFunction)();
+	static uint8_t hasDownloadDataFunction;
+	static void (*DownloadDataFunction)(uint8_t* payload,uint8_t len);
+
 	static void handlerftx();
 	static void handlerfrx();
 	static void handleserialrx();
@@ -131,7 +140,8 @@ public:
 	static void uploaddata(byte msgtype,char* str);
 	static void broadcastdata(byte msgtype,const uint8_t *buffer, size_t size);
 	static void broadcastdata(byte msgtype,char* str);
-	static void setuserintervaluploadfunction(void(*)());
+	static void attachIntervalElapsed(void(*)());
+	static void attachDownloadData(void(*)(uint8_t* payload,uint8_t len));
 };
 extern MXBMESH MxBmesh;
 #endif /* MXBMESH_H_ */
