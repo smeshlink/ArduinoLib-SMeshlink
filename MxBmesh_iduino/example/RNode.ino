@@ -5,7 +5,7 @@
 
 
 #ifndef LOCALADDRESS
-#define LOCALADDRESS	0
+#define LOCALADDRESS	11
 #endif
 #define CHANNEL			26
 void myupload()
@@ -37,6 +37,8 @@ void setup()
 	MxBmesh.attachDownloadData(mydataget);
 	attachInterrupt(0, myhanlder1, FALLING);
 	attachInterrupt(1, myhanlder2, FALLING);
+	digitalWrite(30,HIGH);
+		
 }
 
 void loop()

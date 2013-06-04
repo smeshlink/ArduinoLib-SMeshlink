@@ -313,6 +313,18 @@ void MXBMESH::serialpackage_recieve(uint8_t  *buf,byte len) //
 			NODEINFO.islowpower=false;
 		sendbmeshdata(buf[2+INDEX_PATHCOUNT-INDEX_MSGTYPE+1],buf[2],buf+2,len-5,true);
 		break;
+	case MSGTYPE_CMD_RB:  //get neigbour info by p2p
+		byte nbindex;
+		for ( nbindex=0;nbindex<MAX_NB;nbindex++)
+		{
+			if (NODEINFO.neigbour[nbindex].nodeid!=BROADCASTADDR)
+			{
+				buf[2+2]=NODEINFO.neigbour[nbindex].nodeid; //dest addr
+				buf[2+5]=NODEINFO.neigbour[nbindex].nodeid; //path last
+				sendbmeshdata(NODEINFO.neigbour[nbindex].nodeid,buf[2],buf+2,len-5,true);
+			}
+		}
+		break;
 	}
 	//Serial.write(txqueue.RfData[packetindex_tx].value.destaddress);
 	//Serial.write(txqueue.RfData[packetindex_tx].rbuf,txqueue.RfData[packetindex_tx].length);
@@ -328,7 +340,7 @@ void MXBMESH::handlerftx()
 		needchecksenddone=true;
 		if (txqueue.RfData[packdataindex_tx].value.destaddress==0xff)
 		{
-			if (txqueue.RfData[packdataindex_tx].rbuf[0]==MSGTYPE_RB)
+			if (txqueue.RfData[packdataindex_tx].rbuf[0]==MSGTYPE_RB )
 				_delay_ms(RELAYDELAY);
 			MxRadio.beginTransmission();
 		}
@@ -402,7 +414,7 @@ void MXBMESH::handlerfrx()
 	}
 	else
 	{
-		if (rxqueue.RfData[packdataindex_rx].rbuf[INDEX_MSGTYPE]<MSGTYPE_RU || rxqueue.RfData[packdataindex_rx].rbuf[INDEX_MSGTYPE]>MSGTYPE_CMD_GETCONFIG)
+		if (rxqueue.RfData[packdataindex_rx].rbuf[INDEX_MSGTYPE]<MSGTYPE_RU || rxqueue.RfData[packdataindex_rx].rbuf[INDEX_MSGTYPE]>MSGTYPE_CMD_RB)
 			return;
 		if (rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT]>MAX_ROUTER || rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT]<1) //hop limit
 			return;
@@ -488,24 +500,80 @@ void MXBMESH::handlerfrx()
 				//MSGTYPE SRCADDR DESTADDR SEQ PATHCOUNT NODE1 NODE2 NODE3 NEIGBOUR_NODEID RSSI ... CRC
 				//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 				//+++++++++upload neigbour
-				if (NODEINFO.localAddress!=0)
+				byte sendbuflen=0;
+				for (int neigbourindex=0;neigbourindex<MAX_NB;neigbourindex++)
 				{
-					byte sendbuflen=0;
-					for (int neigbourindex=0;neigbourindex<MAX_NB;neigbourindex++)
+					if (NODEINFO.neigbour[neigbourindex].nodeid!=BROADCASTADDR)
 					{
-						if (NODEINFO.neigbour[neigbourindex].nodeid!=BROADCASTADDR)
-						{
-							ackdata[sendbuflen++]=(byte)NODEINFO.neigbour[neigbourindex].nodeid;
-							ackdata[sendbuflen++]=(byte)NODEINFO.neigbour[neigbourindex].rssi;
-						}
+						ackdata[sendbuflen++]=(byte)NODEINFO.neigbour[neigbourindex].nodeid;
+						ackdata[sendbuflen++]=(byte)NODEINFO.neigbour[neigbourindex].rssi;
 					}
-					uploaddata(MSGTYPE_RU,ackdata,sendbuflen);
 				}
+				uploaddata(MSGTYPE_RU,ackdata,sendbuflen);
+
 				//+++++++++++++++++++
 
 			}
 		}
 		break;
+		/*
+	case MSGTYPE_CMD_RB:  //get neigbour info by p2p
+		if (NODEINFO.localAddress!=SINKADDRESS)
+		{
+			for (int nbindex=0;nbindex<MAX_NB;nbindex++)
+			{
+				if (NODEINFO.neigbour[nbindex].nodeid==BROADCASTADDR || NODEINFO.neigbour[nbindex].nodeid==srcaddress)
+				{
+					NODEINFO.neigbour[nbindex].nodeid=srcaddress;
+					NODEINFO.neigbour[nbindex].rssi=rxqueue.RfData[packdataindex_rx].value.rssi;
+					NODEINFO.neigbour[nbindex].intervalcountpast=0;
+					break;
+				}
+			}//update neigbour
+
+			if ( (uint16_t)((uint16_t)lastrbseq+255)>=rxqueue.RfData[packdataindex_rx].rbuf[INDEX_SEQUENCE] && lastrbseq!=rxqueue.RfData[packdataindex_rx].rbuf[INDEX_SEQUENCE] ) //handle before,every node broadcast one time
+			{
+				int mynodehop=rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT];
+				lastrbseq=rxqueue.RfData[packdataindex_rx].rbuf[INDEX_SEQUENCE];
+				for ( nodeindex =1;nodeindex<=rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT];nodeindex++)
+				{
+					if (rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT+nodeindex]==BROADCASTADDR) //RB package finish by 255
+						break;
+					NODEINFO.pathnode[mynodehop-nodeindex]=rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT+nodeindex];
+				}
+				NODEINFO.pathnode[0]=nodeindex;
+				NODEINFO.pathnode[1]=srcaddress;
+				NODEINFO.pathnode[nodeindex]=SINKADDRESS;
+				//upload neigbourinfo
+				//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+				//MSGTYPE SRCADDR DESTADDR SEQ PATHCOUNT NODE1 NODE2 NODE3 NEIGBOUR_NODEID RSSI ... CRC
+				byte sendbuflen=0;
+				for (int neigbourindex=0;neigbourindex<MAX_NB;neigbourindex++)
+				{
+					if (NODEINFO.neigbour[neigbourindex].nodeid!=BROADCASTADDR )
+					{
+						ackdata[sendbuflen++]=(byte)NODEINFO.neigbour[neigbourindex].nodeid;
+						ackdata[sendbuflen++]=(byte)NODEINFO.neigbour[neigbourindex].rssi;
+					}
+				}
+				uploaddata(MSGTYPE_RU,ackdata,sendbuflen);
+				// add my address to path
+				rxqueue.RfData[packdataindex_rx].rbuf[INDEX_SRCADDR]=NODEINFO.localAddress;
+				rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT+rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT]]=NODEINFO.localAddress;
+				rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT]++;
+				for (byte  nbindex=0;nbindex<MAX_NB;nbindex++)
+				{
+					if (NODEINFO.neigbour[nbindex].nodeid!=BROADCASTADDR && NODEINFO.neigbour[nbindex].nodeid!=SINKADDRESS)
+					{
+						rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT+rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT]]=NODEINFO.neigbour[nbindex].nodeid; //dest addr
+						rxqueue.RfData[packdataindex_rx].rbuf[INDEX_DESTADDR]=NODEINFO.neigbour[nbindex].nodeid; //last addr //path last
+						sendbmeshdata(NODEINFO.neigbour[nbindex].nodeid,MSGTYPE_CMD_RB,rxqueue.RfData[packdataindex_rx].rbuf+INDEX_MSGTYPE,rxqueue.RfData[packdataindex_rx].length-INDEX_MSGTYPE-2+1,true);
+					}
+				}
+				//send add broadcast
+			}
+		}
+		break;*/
 	case MSGTYPE_CMD_RD: //download route ,every node in the path should handle,last node should ack
 		NODEINFO.dataupload_interval=rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT+rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT]+1];
 		if (NODEINFO.dataupload_interval<10 && NODEINFO.dataupload_interval>0)
@@ -591,11 +659,37 @@ void MXBMESH::handlerfrx()
 			serialpackage_send(rxqueue.RfData[packdataindex_rx].rbuf,rxqueue.RfData[packdataindex_rx].length);
 		}
 		break;
+	case MSGTYPE_DU_NEEDAPPACK:
+		if (destaddress_last==SINKADDRESS)//本节点是目标节点
+		{
+			rxqueue.RfData[packdataindex_rx].payloadindex=INDEX_PATHCOUNT+nodeindex+1;
+			serialpackage_send(rxqueue.RfData[packdataindex_rx].rbuf,rxqueue.RfData[packdataindex_rx].length);
+		}
+		break;
+
 	case MSGTYPE_DU_NEEDACK:
 		if (destaddress_last==SINKADDRESS)//本节点是目标节点
 		{
 			rxqueue.RfData[packdataindex_rx].payloadindex=INDEX_PATHCOUNT+nodeindex+1;
 			serialpackage_send(rxqueue.RfData[packdataindex_rx].rbuf,rxqueue.RfData[packdataindex_rx].length);
+			byte downloadpath[MAX_ROUTER];
+			downloadpath[0]=rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT];
+			downloadpath[downloadpath[0]]=srcaddress_last;
+			for (byte index=1;index<downloadpath[0];index++)
+			{
+				downloadpath[downloadpath[0]-index]=rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT+index];
+			}
+			//ack
+			byte txbufindex=0;
+			ackdata[txbufindex++]=MSGTYPE_DU_ACK;
+			ackdata[txbufindex++]=NODEINFO.localAddress;
+			ackdata[txbufindex++]=srcaddress_last;
+			ackdata[txbufindex++]=sendpacketseq++;
+			for (int pathindex=0;pathindex<=downloadpath[0];pathindex++)
+			{
+				ackdata[txbufindex++]=downloadpath[pathindex];
+			}
+			sendbmeshdata(downloadpath[1],MSGTYPE_DU_ACK,ackdata,txbufindex,true);
 		}
 		break;
 	case MSGTYPE_RU: //data upload must forward to base 0

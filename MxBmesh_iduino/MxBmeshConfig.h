@@ -28,7 +28,7 @@
 
 #define MAX_ROUTER		20
 #define PACKAGE_MAX		128
-#define	RFQUENEMAX 		50
+
 
 #define	EEPROMSTART 		0
 #define	BMESHCONFIGTAG 		0xBB

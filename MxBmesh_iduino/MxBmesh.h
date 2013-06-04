@@ -34,6 +34,9 @@
 #define MSGTYPE_CMD_HIGHPOWER    13   //commd down
 #define MSGTYPE_CMD_GETPOWER     14   //commd down
 #define MSGTYPE_CMD_GETCONFIG    15   //commd down
+#define MSGTYPE_CMD_RB		16  //start route ,but need acl
+
+#define MSGTYPE_DU_NEEDAPPACK		17
 
 #define MSGTYPE_WAKEUP_SHIFT		0xF0
 
