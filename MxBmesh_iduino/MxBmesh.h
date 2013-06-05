@@ -45,6 +45,8 @@
 #define INDEX_DESTADDR		11
 #define INDEX_SEQUENCE		12
 #define INDEX_PATHCOUNT		13
+
+#define	IPBUFSIZE			1500
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //MSGTYPE SRCADDR DESTADDR SEQ PATHCOUNT NODE1 NODE2 NODE3... PAYLOAD CRC
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -59,6 +61,13 @@ enum HDLCPacketType
 	XPACKET_START = 0x7E,    //!< Reserved for serial packetizer start code.
 	XPACKET_TEXT_MSG = 0xF8,    //!< Special id for sending text error messages.
 };
+
+struct app_flags_t
+{
+	uint8_t have_ip:1;
+	uint8_t have_resolv:1;
+};
+
 
 class MXBMESH {
 private:
@@ -77,13 +86,13 @@ private:
 	static Timer data_upload_timer;
 	static void broadcast_neigbour(void *ctx);
 	static void data_upload(void *ctx);
-	static void WriteSerialData(byte *ioData, byte startIndex, int len);
+	static void WritePacketData(byte *ioData, byte startIndex, int len);
 	static void onXmitDone(radio_tx_done_t x);
-	static void serialpackage_send(uint8_t  *buf,byte len);
-	static void serialpackage_recieve(uint8_t  *buf,byte len);
+	static void package_send(uint8_t  *buf,byte len);
+	static void package_recieve(uint8_t  *buf,byte len);
 
 
-	static byte rxserialbuf[SERIALMTU];
+	static byte rxserialbuf[IPSERIALMTU];
 	static byte rxserialbufindex;
 
 	static uint8_t* recievehandler(uint8_t len, uint8_t* frm, uint8_t lqi, int8_t ed,uint8_t crc_fail);
@@ -95,10 +104,22 @@ private:
 	static void handlerftx();
 	static void handlerfrx();
 	static void handleserialrx();
-
+	static void handleiprx();
 	static bool needrecievebroadcastdata;
 	static bool needchecksenddone;
 	static byte needrecievebroadcastdatadelaycount;
+	static byte IpSerialData[IPBUFSIZE];
+	static uint16_t IpSerialDataLen;
+#if IPSINK
+	static struct uip_conn *conn;
+	static uip_ipaddr_t tcpserver;
+	static app_flags_t app_flags;
+	static void appcall();
+
+	static void resolv_found_cb(char *name,uint16_t *addr) ;
+	static void dhcp_status_cb(int s,const uint16_t *dnsaddr);
+#endif
+
 public:
 	MXBMESH();
 	static void begin(channel_t chan,uint16_t localaddress,char autoretrycount,unsigned long baudrate,bool powermode=false);
@@ -110,6 +131,9 @@ public:
 	static void attachIntervalElapsed(void(*)());
 	static void attachDownloadData(void(*)(uint8_t* payload,uint8_t len));
 	static void sendbmeshdata(byte nodeid,byte msgtype,const unsigned char *buffer, size_t size,bool withheader=false);
+	static void beginipsink(channel_t chan,uint16_t _localAddress, \
+			char autoretrycount,const byte *mac,uip_ipaddr_t *serverip, \
+			uint16_t serverport,byte cspin,bool powermode=false);
 };
 extern MXBMESH MxBmesh;
 #endif /* MXBMESH_H_ */

@@ -9,7 +9,7 @@
 #define  QUEUE_H_
 #include <Arduino.h>
 #define PACKAGE_MAX		128
-#define	RFQUENEMAX 		50
+#define	RFQUENEMAX 		40
 
 struct RfData
 {

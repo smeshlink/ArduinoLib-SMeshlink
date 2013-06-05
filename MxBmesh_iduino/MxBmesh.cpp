@@ -2,7 +2,6 @@
 #include "MxBmesh.h"
 #include <util/delay.h>
 
-
 byte  MXBMESH::retrysend=0;
 
 
@@ -14,7 +13,7 @@ SERIALCRC MXBMESH::serialcrc=SERIALCRC();
 QUEUE MXBMESH::rxqueue=QUEUE();
 QUEUE MXBMESH::txqueue=QUEUE();
 //MXBMESHCONFIG MXBMESH::NODEINFO=MXBMESHCONFIG();
-byte MXBMESH::rxserialbuf[SERIALMTU];
+byte MXBMESH::rxserialbuf[IPSERIALMTU];
 byte MXBMESH::rxserialbufindex=0;
 uint8_t MXBMESH::hasIntervalElapsedFunction=0;
 void (*MXBMESH::IntervalElapsedFunction)();
@@ -25,8 +24,64 @@ byte MXBMESH::needrecievebroadcastdatadelaycount=0;
 bool MXBMESH::needchecksenddone=true;
 Timer MXBMESH::broadcast_neigbour_timer(CLOCK_SECOND * NODEINFO.broadcastInterval, true, broadcast_neigbour, NULL);
 Timer MXBMESH::data_upload_timer(CLOCK_SECOND * 10, true, data_upload, NULL);
+#if IPSINK
+struct uip_conn *MXBMESH::conn;
+app_flags_t MXBMESH::app_flags;
 
+byte MXBMESH::IpSerialData[IPBUFSIZE];
+uint16_t MXBMESH::IpSerialDataLen=0;
+#endif
 MXBMESH MxBmesh;
+
+
+#if IPSINK
+
+
+void MXBMESH::dhcp_status_cb(int s,const uint16_t *dnsaddr) {
+	char buf[20];
+	if (s==DHCP_STATUS_OK) {
+		resolv_conf(dnsaddr);
+		app_flags.have_ip = 1;
+	}
+}
+
+void MXBMESH::resolv_found_cb(char *name,uint16_t *addr) {
+	char buf[20];
+	uip.format_ipaddr(buf,addr);
+	printf_P(PSTR("%lu: DNS: %s has address %s\r\n"),millis(),name,buf);
+	app_flags.have_resolv = 1;
+}
+
+
+
+void MXBMESH:: appcall(void)
+{
+	uint8_t sendbuf[IPBUFSIZE];
+	uint8_t buflen;
+	buflen=0;
+	char *hello="Hi,This is a BMesh test!\n";
+	if(uip_connected())
+	{
+		uip_send(hello,strlen(hello)+1);
+	}
+
+	if(conn->tcpstateflags == UIP_ESTABLISHED   )
+	{
+
+		if (IpSerialDataLen)
+		{
+			uip_send(IpSerialData,IpSerialDataLen);
+			IpSerialDataLen=0;
+		}
+	}
+
+	handleiprx();
+}
+#endif
+
+
+
+
 
 MXBMESH::MXBMESH() {
 	// TODO Auto-generated constructor stub
@@ -70,26 +125,30 @@ void MXBMESH::attachIntervalElapsed(void(*funct)())
 	IntervalElapsedFunction=funct;
 	hasIntervalElapsedFunction=(funct == 0) ? 0 : 1;
 }
-void MXBMESH::WriteSerialData(byte *ioData, byte startIndex, int len)
+void MXBMESH::WritePacketData(byte *ioData, byte startIndex, int len)
 {
-	byte crcData[SERIALMTU];
+
+	byte crcData[IPSERIALMTU];
+	byte sendData[IPSERIALMTU];
+	byte sendDataIndex=0;
 	crcData[0] = (byte)XPACKET_NO_ACK;
+
 	memcpy(crcData+1,ioData+startIndex, len);
 	int currentIndex = 0;
 	//添加同步字符
-	Serial.write((byte)XPACKET_START) ;
+	sendData[sendDataIndex++]=(byte)XPACKET_START;
 	//添加数据包类型
-	Serial.write((byte)XPACKET_NO_ACK);
+	sendData[sendDataIndex++]=(byte)XPACKET_NO_ACK;
 	for (int i = startIndex; i < startIndex + len; i++)
 	{
 		if (ioData[i] == XPACKET_ESC || ioData[i] == XPACKET_START)
 		{
-			Serial.write((byte)XPACKET_ESC);
-			Serial.write((byte)(ioData[i] ^ 0x20));
+			sendData[sendDataIndex++]=(byte)XPACKET_ESC;
+			sendData[sendDataIndex++]=(byte)(ioData[i] ^ 0x20);
 		}
 		else
 		{
-			Serial.write((byte) ioData[i]);
+			sendData[sendDataIndex++]=(byte)(ioData[i]);
 		}
 	}
 	uint16_t crc = serialcrc.crc_packet(crcData,len+1);
@@ -98,25 +157,34 @@ void MXBMESH::WriteSerialData(byte *ioData, byte startIndex, int len)
 
 	if (crc_lowbyte == XPACKET_ESC || crc_lowbyte == XPACKET_START)
 	{
-		Serial.write((byte)XPACKET_ESC);
-		Serial.write((byte)(crc_lowbyte ^ 0x20));
-
+		sendData[sendDataIndex++]=(byte)XPACKET_ESC;
+		sendData[sendDataIndex++]=(byte)(crc_lowbyte ^ 0x20);
 	}
 	else
 	{
-		Serial.write((byte)crc_lowbyte );
-
+		sendData[sendDataIndex++]=(byte)(crc_lowbyte);
 	}
 	if (crc_highbyte == XPACKET_ESC || crc_highbyte == XPACKET_START)
 	{
-		Serial.write((byte)XPACKET_ESC);
-		Serial.write((byte)(crc_highbyte ^ 0x20));
+		sendData[sendDataIndex++]=(byte)XPACKET_ESC;
+		sendData[sendDataIndex++]=(byte)(crc_highbyte ^ 0x20);
 	}
 	else
 	{
-		Serial.write((byte)crc_highbyte );
+		sendData[sendDataIndex++]=(byte)(crc_highbyte);
 	}
-	Serial.write((byte)XPACKET_START);
+	sendData[sendDataIndex++]=(byte)(XPACKET_START);
+
+#if SERIALSINK
+	Serial.write(sendData,sendDataIndex);
+	Serial.flush();
+#endif
+#if IPSINK
+	memcpy(IpSerialData+IpSerialDataLen,sendData,sendDataIndex);
+	IpSerialDataLen+=sendDataIndex;
+#endif
+
+
 
 }
 
@@ -230,6 +298,27 @@ void MXBMESH::onXmitDone(radio_tx_done_t x)
 	}
 
 }
+void MXBMESH::beginipsink(channel_t chan,uint16_t _localAddress, \
+		char autoretrycount,const byte *mac,uip_ipaddr_t *serverip, \
+		uint16_t serverport,byte cspin,bool powermode)
+{
+#if IPSINK
+	NODEINFO.isIpSink=true;
+	memcpy(NODEINFO.mac,mac,6);
+	memcpy(&NODEINFO.serverip,serverip,sizeof(*serverip));
+	NODEINFO.serverport=serverport;
+	uip.init(mac,cspin);
+	uip.wait_for_link();
+	uip.set_ip_addr(192,168,1,15);
+	//uip.start_dhcp(dhcp_status_cb);
+	//uip.init_resolv(resolv_found_cb);
+
+	//udp_init(&udpserver);
+	conn=uip_connect(serverip, UIP_HTONS(80), appcall);
+#endif
+	begin(chan,_localAddress,autoretrycount,38400,powermode);
+}
+
 void MXBMESH::begin(channel_t chan,uint16_t _localAddress,char autoretrycount,unsigned long baudrate,bool powermode)
 {
 	Serial.begin(baudrate);
@@ -266,13 +355,13 @@ void MXBMESH::begin(channel_t chan,uint16_t _localAddress,char autoretrycount,un
 	broadcast_neigbour_timer.start();
 
 }
-void MXBMESH::serialpackage_send(uint8_t  *buf,byte len)
+void MXBMESH::package_send(uint8_t  *buf,byte len)
 {
-	WriteSerialData(buf,9,len-9-2); //payload start from message type
+	WritePacketData(buf,9,len-9-2); //payload start from message type
 }
 
 //++++++ only for sinknode
-void MXBMESH::serialpackage_recieve(uint8_t  *buf,byte len) //
+void MXBMESH::package_recieve(uint8_t  *buf,byte len) //
 {
 	//need check crc first
 	rxserialbufindex=0;
@@ -298,7 +387,7 @@ void MXBMESH::serialpackage_recieve(uint8_t  *buf,byte len) //
 		sbuf[3]=0;
 		sbuf[4]=0; //pathcount
 		sbuf[5]=NODEINFO.islowpower; //value
-		WriteSerialData(sbuf,0, 6);
+		WritePacketData(sbuf,0, 6);
 		break;
 	case MSGTYPE_CMD_LOWPOWER:
 	case MSGTYPE_CMD_HIGHPOWER:
@@ -656,14 +745,14 @@ void MXBMESH::handlerfrx()
 		if (destaddress_last==SINKADDRESS)//本节点是目标节点
 		{
 			rxqueue.RfData[packdataindex_rx].payloadindex=INDEX_PATHCOUNT+nodeindex+1;
-			serialpackage_send(rxqueue.RfData[packdataindex_rx].rbuf,rxqueue.RfData[packdataindex_rx].length);
+			package_send(rxqueue.RfData[packdataindex_rx].rbuf,rxqueue.RfData[packdataindex_rx].length);
 		}
 		break;
 	case MSGTYPE_DU_NEEDAPPACK:
 		if (destaddress_last==SINKADDRESS)//本节点是目标节点
 		{
 			rxqueue.RfData[packdataindex_rx].payloadindex=INDEX_PATHCOUNT+nodeindex+1;
-			serialpackage_send(rxqueue.RfData[packdataindex_rx].rbuf,rxqueue.RfData[packdataindex_rx].length);
+			package_send(rxqueue.RfData[packdataindex_rx].rbuf,rxqueue.RfData[packdataindex_rx].length);
 		}
 		break;
 
@@ -671,7 +760,7 @@ void MXBMESH::handlerfrx()
 		if (destaddress_last==SINKADDRESS)//本节点是目标节点
 		{
 			rxqueue.RfData[packdataindex_rx].payloadindex=INDEX_PATHCOUNT+nodeindex+1;
-			serialpackage_send(rxqueue.RfData[packdataindex_rx].rbuf,rxqueue.RfData[packdataindex_rx].length);
+			package_send(rxqueue.RfData[packdataindex_rx].rbuf,rxqueue.RfData[packdataindex_rx].length);
 			byte downloadpath[MAX_ROUTER];
 			downloadpath[0]=rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT];
 			downloadpath[downloadpath[0]]=srcaddress_last;
@@ -698,7 +787,7 @@ void MXBMESH::handlerfrx()
 		{
 			rxqueue.RfData[packdataindex_rx].payloadindex=INDEX_PATHCOUNT+nodeindex+1;
 			//Serial.write(rxqueue.RfData[packdataindex_rx].rbuf,rxqueue.RfData[packdataindex_rx].length);
-			serialpackage_send(rxqueue.RfData[packdataindex_rx].rbuf,rxqueue.RfData[packdataindex_rx].length);
+			package_send(rxqueue.RfData[packdataindex_rx].rbuf,rxqueue.RfData[packdataindex_rx].length);
 		}
 		break;
 
@@ -740,7 +829,7 @@ void MXBMESH::handlerfrx()
 		if (rxqueue.RfData[packdataindex_rx].rbuf[INDEX_PATHCOUNT]==nodeindex)//本节点是目标节点
 		{
 			rxqueue.RfData[packdataindex_rx].payloadindex=INDEX_PATHCOUNT+nodeindex+1;
-			serialpackage_send(rxqueue.RfData[packdataindex_rx].rbuf,rxqueue.RfData[packdataindex_rx].length);
+			package_send(rxqueue.RfData[packdataindex_rx].rbuf,rxqueue.RfData[packdataindex_rx].length);
 		}
 		break;
 	case MSGTYPE_DU_ACK:
@@ -753,14 +842,14 @@ void MXBMESH::handleserialrx()
 {
 	while (Serial.available())
 	{
-		if (rxserialbufindex>SERIALMTU)
+		if (rxserialbufindex>IPSERIALMTU)
 			break;
 		rxserialbuf[rxserialbufindex]=Serial.read();
 		if (rxserialbuf[rxserialbufindex] == 0x7e)
 		{
 			if (rxserialbuf[0] == 0x7e && rxserialbufindex > 2)//0x7e0x7e,后面一个为开始
 			{
-				serialpackage_recieve(rxserialbuf, rxserialbufindex + 1);
+				package_recieve(rxserialbuf, rxserialbufindex + 1);
 				rxserialbufindex = 0;
 			}
 			else if (rxserialbufindex <= 2)
@@ -782,14 +871,61 @@ void MXBMESH::handleserialrx()
 		}
 	}
 }
+
+void MXBMESH::handleiprx()
+{
+	if(uip_newdata() )
+	{
+		uint16_t uipdataindex=0;
+		while (uipdataindex<uip_len)
+		{
+			rxserialbuf[rxserialbufindex]=((uint8_t *)uip_appdata)[uipdataindex++];
+			if (rxserialbuf[rxserialbufindex] == 0x7e)
+			{
+				if (rxserialbuf[0] == 0x7e && rxserialbufindex > 2)//0x7e0x7e,后面一个为开始
+				{
+					package_recieve(rxserialbuf, rxserialbufindex + 1);
+					rxserialbufindex = 0;
+				}
+				else if (rxserialbufindex <= 2)
+				{
+					rxserialbuf[0] = 0x7e;
+					rxserialbufindex = 1;
+				}
+			}
+			else
+			{
+				//XPACKET_ESC为转译符
+				if (rxserialbuf[rxserialbufindex] == XPACKET_ESC)
+				{
+					if (++uipdataindex<uip_len)
+						rxserialbuf[rxserialbufindex]=((uint8_t *)uip_appdata)[uipdataindex];
+					else
+						break;
+					rxserialbuf[rxserialbufindex] = (byte)(rxserialbuf[rxserialbufindex] ^ 0x20);
+				}
+				rxserialbufindex++;
+			}
+		}
+	}
+}
+
 void MXBMESH::poll()
 {
+#if IPSINK
+	uip.poll();
 
+	if(conn->tcpstateflags == UIP_CLOSED   )
+	{
+		conn=uip_connect(&NODEINFO.serverip, UIP_HTONS(80), appcall);
+	}
+#endif
 	//处理收到的数据包
 	if (NODEINFO.localAddress==SINKADDRESS) //base need handle serial data
 	{
+#if SERIALSINK
 		handleserialrx();
-
+#endif
 	}
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	handlerfrx();

@@ -6,9 +6,14 @@ channel_t MXBMESHCONFIG::localChannel=26;
 byte MXBMESHCONFIG::broadcastInterval=90;
 byte MXBMESHCONFIG::dataupload_interval=0;
 byte MXBMESHCONFIG::pathnode[MAX_ROUTER];  //start from hop count , next hop, path finish with dest nodeid
-bool MXBMESHCONFIG::islowpower=true;
+bool MXBMESHCONFIG::islowpower=false;
+bool MXBMESHCONFIG::isIpSink=false;
 NeigbourInfo MXBMESHCONFIG::neigbour[MAX_NB];
-
+#if IPSINK
+byte MXBMESHCONFIG::mac[6];
+uip_ipaddr_t MXBMESHCONFIG::serverip;
+uint16_t MXBMESHCONFIG::serverport=80;
+#endif
 MXBMESHCONFIG::MXBMESHCONFIG() {
 
 }

@@ -10,12 +10,18 @@
 #include <Arduino.h>
 #include <EEPROM.h>
 #include <MxRadio.h>
+#include <psock.h>
+#include <NanodeUIP.h>
+
+#define IPSINK			1
+#define SERIALSINK			1
+
 #define MAX_NB		25
 
 #define	RETRYSEND_MAX 		10
 #define RELAYDELAY		5
 #define NODECOUNT_MAX		255
-#define SERIALMTU	256
+#define IPSERIALMTU	250
 #define BROADCASTINTERVALPAST_MAX 4
 #define RSSI_STEP 0
 
@@ -40,6 +46,8 @@ struct NeigbourInfo
 	byte intervalcountpast;
 };
 class  MXBMESHCONFIG {
+private :
+
 public:
 	static byte localAddress;
 	static channel_t localChannel;
@@ -48,6 +56,12 @@ public:
 	static byte dataupload_interval;
 	static byte pathnode[MAX_ROUTER];  //start from hop count , next hop, path finish with dest nodeid
 	static bool islowpower;
+	static bool isIpSink;
+#if IPSINK
+	static byte mac[6];
+	static uip_ipaddr_t serverip;
+	static uint16_t serverport;
+#endif
 	MXBMESHCONFIG();
 	static void LoadCONFIG();
 	static void SaveCONFIG();
