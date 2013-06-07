@@ -735,6 +735,14 @@ void cMxRadio::setChannel(channel_t chan)
 {
 	radio_set_param(RP_CHANNEL(chan));
 }
+uint8_t cMxRadio::getChannel()
+{
+	trx_param_t p;
+	trx_parms_get(&p);
+	channel_t chan= p.chan;
+	return (uint8_t)chan;
+}
+
 
 /**
  * @brief Read Receiver Signal Strength Indicator Now

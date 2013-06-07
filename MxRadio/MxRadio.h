@@ -104,6 +104,7 @@ class cMxRadio
 		void setState(radio_state_t);
 		void setStateRx();
 		void setChannel(channel_t);
+		uint8_t getChannel();
 		void forceState(radio_state_t);
 		void waitTxDone(uint16_t);
 		int8_t getRssiNow();

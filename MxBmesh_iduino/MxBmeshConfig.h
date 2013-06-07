@@ -13,8 +13,8 @@
 #include <psock.h>
 #include <NanodeUIP.h>
 
-#define IPSINK			1
-#define SERIALSINK			1
+#define IPSINK			0
+#define SERIALSINK		1
 
 #define MAX_NB		25
 
@@ -35,8 +35,9 @@
 #define MAX_ROUTER		20
 #define PACKAGE_MAX		128
 
+#define TXPOWERSHIFT		128
 
-#define	EEPROMSTART 		0
+#define	EEPROMSTART 		100
 #define	BMESHCONFIGTAG 		0xBB
 
 struct NeigbourInfo
@@ -53,17 +54,18 @@ public:
 	static channel_t localChannel;
 	static byte broadcastInterval;
 	static NeigbourInfo neigbour[MAX_NB];
-	static byte dataupload_interval;
+	static uint16_t dataupload_interval;
 	static byte pathnode[MAX_ROUTER];  //start from hop count , next hop, path finish with dest nodeid
 	static bool islowpower;
-	static bool isIpSink;
+	static byte txPower;
+
 #if IPSINK
 	static byte mac[6];
 	static uip_ipaddr_t serverip;
 	static uint16_t serverport;
 #endif
 	MXBMESHCONFIG();
-	static void LoadCONFIG();
+	static bool LoadCONFIG();
 	static void SaveCONFIG();
 
 };

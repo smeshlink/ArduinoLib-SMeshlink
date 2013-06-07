@@ -32,11 +32,15 @@
 #define MSGTYPE_CMD_RD	11   //route down select longest path,enable all the node in the path can recieve
 #define MSGTYPE_CMD_LOWPOWER     12   //commd down
 #define MSGTYPE_CMD_HIGHPOWER    13   //commd down
-#define MSGTYPE_CMD_GETPOWER     14   //commd down
+#define MSGTYPE_CMD_GETBASEINFO     14   //commd down
 #define MSGTYPE_CMD_GETCONFIG    15   //commd down
-#define MSGTYPE_CMD_RB		16  //start route ,but need acl
+#define MSGTYPE_CMD_SETCONFIG    16   //commd down
 
-#define MSGTYPE_DU_NEEDAPPACK		17
+#define MSGTYPE_CMD_CLRNEIGBOUR    17   //commd down
+#define MSGTYPE_CMD_REBOOT    18   //commd down
+
+#define MSGTYPE_DU_NEEDAPPACK		19
+
 
 #define MSGTYPE_WAKEUP_SHIFT		0xF0
 
@@ -110,6 +114,7 @@ private:
 	static byte needrecievebroadcastdatadelaycount;
 	static byte IpSerialData[IPBUFSIZE];
 	static uint16_t IpSerialDataLen;
+	static HardwareSerial *sinkSerial;
 #if IPSINK
 	static struct uip_conn *conn;
 	static uip_ipaddr_t tcpserver;
@@ -122,7 +127,7 @@ private:
 
 public:
 	MXBMESH();
-	static void begin(channel_t chan,uint16_t localaddress,char autoretrycount,unsigned long baudrate,bool powermode=false);
+	static void begin(channel_t chan,uint16_t localaddress,HardwareSerial *mySerial,bool powermode=false);
 	static void poll();
 	static void uploaddata(byte msgtype,const uint8_t *buffer, size_t size);
 	static void uploaddata(byte msgtype,char* str);
