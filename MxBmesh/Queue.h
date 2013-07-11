@@ -6,36 +6,36 @@
  */
 
 #ifndef QUEUE_H_
-#define  QUEUE_H_
-#include <Arduino.h>
-#define PACKAGE_MAX		128
-#define	RFQUENEMAX 		50
+#define QUEUE_H_
+
+#include <MxBmeshConfig.h>
+
 
 struct RfData
 {
-	byte rbuf[PACKAGE_MAX];
-	byte length;
-	byte payloadindex;
+	uint8_t rbuf[PACKAGE_MAX];
+	uint8_t length;
+	uint8_t payloadindex;
 	union
 	{
-		byte rssi;
-		byte destaddress;
+		uint8_t rssi;
+		uint8_t destaddress;
 	} value;
 };
 
 class  QUEUE {
 private:
 
-	byte front;
-	byte rear;;
+	uint8_t front;
+	uint8_t rear;;
 public:
 	struct RfData RfData[RFQUENEMAX];
 	QUEUE();
 	void init_queue();
-	byte inqueue( );
-	byte dequeue();
+	uint8_t inqueue( );
+	uint8_t dequeue();
 	void undodequeue();
-	byte peerqueue();
+	uint8_t peerqueue();
 
 };
 

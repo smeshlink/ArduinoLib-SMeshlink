@@ -102,9 +102,19 @@
 #define BOARD_IDUINOPRORFR2 (120)
 #define BOARD_IDUINOPRORF212 (121)
 
+#define BOARD_MIDUINO231 (130)
+#define BOARD_MIDUINO212 (121)
 
 /* === BOARD INCLUDES === */
-#if defined(mx231cc)
+#if defined(miduino231)
+# define BOOT_LOADER_ADDRESS (0xf000)
+# include "boards/board_miduino2xx.h"
+
+#elif defined(miduino212)
+# define BOOT_LOADER_ADDRESS (0xf000)
+# include "boards/board_miduino2xx.h"
+
+#elif defined(mx231cc)
 # define BOOT_LOADER_ADDRESS (0xf000)
 # include "boards/board_mx2xxcc.h"
 

@@ -7,12 +7,10 @@
 
 #ifndef MXBMESHCONFIG_H_
 #define MXBMESHCONFIG_H_
-#include <contiki.h>  // it must be included first
-
 #include <Arduino.h>
 #include <EEPROM.h>
 #include <MxRadio.h>
-#include <Timer.h>
+#include <MxTimer2.h>
 #include "stdint.h"
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

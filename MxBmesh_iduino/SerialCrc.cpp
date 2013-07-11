@@ -7,14 +7,11 @@
 
 #include "SerialCrc.h"
 
-SERIALCRC::SERIALCRC() {
-	// TODO Auto-generated constructor stub
 
-}
 
-uint16_t   SERIALCRC::crc_byte(uint16_t crc, byte b)
+ uint16_t   SERIALCRC::crc_byte(uint16_t crc, uint8_t b)
 {
-	byte i;
+	uint8_t i;
 
 	crc = (uint16_t)(crc ^ b << 8);
 	i = 8;
@@ -29,7 +26,7 @@ uint16_t   SERIALCRC::crc_byte(uint16_t crc, byte b)
 
 	return crc;
 }
-uint16_t   SERIALCRC::crc_packet(const uint8_t *data,int len)
+ uint16_t   SERIALCRC::crc_packet(const uint8_t *data,int len)
 {
 	uint16_t crc = 0;
 		int dataIndex = len;
@@ -38,7 +35,7 @@ uint16_t   SERIALCRC::crc_packet(const uint8_t *data,int len)
 
 	return crc;
 }
-uint16_t    SERIALCRC::crc_packet(const uint8_t *data, int offset, int len)
+ uint16_t    SERIALCRC::crc_packet(const uint8_t *data, int offset, int len)
 {
 	uint16_t crc = 0;
 	int dataIndex = len;

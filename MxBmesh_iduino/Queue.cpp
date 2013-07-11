@@ -10,9 +10,9 @@ void QUEUE::init_queue()
 	front=rear=0;
 
 }
-byte QUEUE::peerqueue()
+uint8_t QUEUE::peerqueue()
 {
-	byte t=RFQUENEMAX;
+	uint8_t t=RFQUENEMAX;
 	if(front==rear)//队列是空
 	{
 		return RFQUENEMAX;
@@ -21,9 +21,9 @@ byte QUEUE::peerqueue()
 
 	return t;
 }
-byte QUEUE::inqueue()
+uint8_t QUEUE::inqueue()
 {
-	byte t=RFQUENEMAX;
+	uint8_t t=RFQUENEMAX;
 	if((rear+1)%RFQUENEMAX==front)//队列满
 	{
 		return RFQUENEMAX ;
@@ -37,9 +37,9 @@ byte QUEUE::inqueue()
 
 	return t;
 }
-byte QUEUE::dequeue()
+uint8_t QUEUE::dequeue()
 {
-	byte t=RFQUENEMAX;
+	uint8_t t=RFQUENEMAX;
 	if(front==rear)//队列是空
 	{
 		return RFQUENEMAX;

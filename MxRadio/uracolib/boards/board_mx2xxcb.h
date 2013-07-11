@@ -94,7 +94,8 @@ Bootloader:
 #if defined(mx231cb)
 # define BOARD_TYPE BOARD_MX231CB
 # define BOARD_NAME "mx231cb"
-# define RADIO_TYPE (RADIO_AT86RF231)
+//# define RADIO_TYPE (RADIO_AT86RF231)
+# define RADIO_TYPE (RADIO_AT86RF230)
 #elif defined(mx212cb)
 # define BOARD_TYPE BOARD_MX212CB
 # define BOARD_NAME "mx212cb"
