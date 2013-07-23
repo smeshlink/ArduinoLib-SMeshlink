@@ -8,8 +8,13 @@
 #ifndef MXBMESH_H_
 #define MXBMESH_H_
 
+#include "contiki.h"
+#include <Timer.h>
+#include <Process.h>
 #include <MxBmeshConfig.h>
 #include <Queue.h>
+
+
 
 class MXBMESH {
 private:
@@ -29,8 +34,7 @@ private:
 	static void data_upload(void *ctx);
 	static void onXmitDone(radio_tx_done_t x);
 
-
-#if SINKNODE
+#if WITHSINKSOFT
 	static byte rxserialbuf[SINKMTU];
 	static byte rxserialbufindex;
 	static void handleserialrx();

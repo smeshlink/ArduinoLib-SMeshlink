@@ -2,7 +2,7 @@
 #include "MxBmesh.h"
 #include <util/delay.h>
 
-#define TIMER2TICKS 10 //this is timer period
+#define TIMER2TICKS 1 //this is timer period
 byte  MXBMESH::retrysend=0;
 
 
@@ -14,7 +14,7 @@ QUEUE MXBMESH::rxqueue=QUEUE();
 QUEUE MXBMESH::txqueue=QUEUE();
 byte MXBMESH::broadcast_interval_passed=0;
 uint16_t MXBMESH::dataupload_interval_passed=0;
-#if SINKNODE
+#if WITHSINKSOFT
 byte MXBMESH::rxserialbuf[SINKMTU];
 byte MXBMESH::rxserialbufindex=0;
 HardwareSerial *MXBMESH::sinkSerial=NULL;
@@ -67,12 +67,12 @@ void MXBMESH::timer2function()
 {
 	broadcast_interval_passed++;
 	dataupload_interval_passed++;
-	if (broadcast_interval_passed / TIMER2TICKS>NODEINFO.broadcastInterval / TIMER2TICKS)
+	if (broadcast_interval_passed / TIMER2TICKS>=NODEINFO.broadcastInterval / TIMER2TICKS && NODEINFO.broadcastInterval>0)
 	{
 		broadcast_neigbour(NULL);
 		broadcast_interval_passed=0;
 	}
-	if (dataupload_interval_passed / TIMER2TICKS> (NODEINFO.dataupload_interval / TIMER2TICKS) && dataupload_interval_passed!=0 ) //upload data
+	if (dataupload_interval_passed / TIMER2TICKS>= (NODEINFO.dataupload_interval / TIMER2TICKS) && NODEINFO.dataupload_interval>0 && NODEINFO.localAddress!=SINKADDRESS ) //upload data
 	{
 		data_upload(NULL);
 		dataupload_interval_passed=0;
@@ -114,6 +114,8 @@ uint8_t* MXBMESH::recievehandler(uint8_t len, uint8_t* frm, uint8_t lqi, int8_t 
 }
 void MXBMESH::sendbmeshdata(byte nodeid,byte msgtype,const unsigned char *buffer, size_t size,bool withheader)
 {
+	if (NODEINFO.localAddress==nodeid)
+		return;//send to myself
 	if (NODEINFO.pathnode[0]==0 && nodeid==SINKADDRESS)
 		return; //no path
 	byte packdataindex_tx=txqueue.inqueue(); //maybe empty
@@ -207,7 +209,7 @@ void MXBMESH::onXmitDone(radio_tx_done_t x)
 
 void MXBMESH::begin(channel_t chan,uint16_t localaddress,HardwareSerial *mySerial,bool powermode)
 {
-#if SINKNODE
+#if WITHSINKSOFT
 	sinkSerial=mySerial;
 #endif
 	NODEINFO.localAddress=localaddress;
@@ -592,7 +594,7 @@ void MXBMESH::handlerfrx()
 	case MSGTYPE_DU_ACK:
 
 			break;
-#if SINKNODE
+#if WITHSINKSOFT
 	case MSGTYPE_DU://data upload
 			if (destaddress_last==SINKADDRESS)//本节点是目标节点
 			{
@@ -655,7 +657,7 @@ void MXBMESH::handlerfrx()
 	}
 
 }
-#if SINKNODE
+#if WITHSINKSOFT
 void MXBMESH::handleserialrx()
 {
 	while (sinkSerial->available())
@@ -739,7 +741,7 @@ void MXBMESH::WritePacketData(byte *ioData, byte startIndex, int len)
 	sendData[sendDataIndex++]=(byte)(XPACKET_START);
 	sinkSerial->write(sendData,sendDataIndex);
 }
-//++++++ only for sinknode
+//++++++ only for WITHSINKSOFT
 void MXBMESH::package_recieve(uint8_t  *buf,byte len) //
 {
 	//need check crc first
@@ -762,7 +764,7 @@ void MXBMESH::package_recieve(uint8_t  *buf,byte len) //
 	case MSGTYPE_RB:
 		broadcastdata(messagetype,buf+2,len-5);
 		break;
-	case MSGTYPE_CMD_GETBASEINFO: //sinknode should shift last get info
+	case MSGTYPE_CMD_GETBASEINFO: //WITHSINKSOFT should shift last get info
 		ackdata[ackdataindex++]=MSGTYPE_CMD_GETBASEINFO;
 		ackdata[ackdataindex++]=0;//src
 		ackdata[ackdataindex++]=0;//dest
@@ -852,14 +854,16 @@ void MXBMESH::poll()
 {
 	watchdog_periodic();
 	//处理收到的数据包
-#if SINKNODE
-	handleserialrx();
+#if WITHSINKSOFT
+	if (NODEINFO.localAddress==SINKADDRESS)
+		handleserialrx();
 #endif
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	handlerfrx();
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	handlerftx();
-#if SINKNODE
+#if WITHSINKSOFT
+	if (NODEINFO.localAddress==SINKADDRESS)
 		return;
 #endif
 	if (txqueue.peerqueue()!=RFQUENEMAX || rxqueue.peerqueue()!=RFQUENEMAX || !NODEINFO.islowpower)

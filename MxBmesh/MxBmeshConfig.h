@@ -17,8 +17,8 @@
 //MSGTYPE SRCADDR DESTADDR SEQ PATHCOUNT NODE1 NODE2 NODE3... PAYLOAD CRC
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-#define SINKNODE		0
-#if SINKNODE
+#define WITHSINKSOFT		1
+#if WITHSINKSOFT
 #include <SerialCrc.h>
 #define SINKMTU			150 	//250 serial max size
 enum HDLCPacketType
@@ -35,17 +35,19 @@ enum HDLCPacketType
 
 #define PACKAGE_MAX		128  //rf package max size
 
-#if (RAMEND < 16000) 		//rf quene size rxquene=txquene
-#define	RFQUENEMAX 		18
+#if (RAMEND < 8000) 		//rf quene size rxquene=txquene
+#define	RFQUENEMAX 		10
+#elif (RAMEND < 16000)
+#define	RFQUENEMAX 		20
 #else
-#define	RFQUENEMAX 		1
+#define	RFQUENEMAX 		40
 #endif
 
-#define MAX_NB		10	//neigbour size
+#define MAX_NB		20	//neigbour size
 
 #define	RETRYSEND_MAX 		10  //auto resend max count
 #define RELAYDELAY		5		//relay rf delay
-#define NODECOUNT_MAX		60	//255 //max node size
+#define NODECOUNT_MAX		255	//255 //max node size
 #define BROADCASTINTERVALPAST_MAX 4 //neigbour lost count
 #define RSSI_STEP 0				//replace neigbour node rssi good
 

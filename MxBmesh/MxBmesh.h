@@ -31,7 +31,7 @@ private:
 	static void timer2function();
 	static byte broadcast_interval_passed;
 	static uint16_t	dataupload_interval_passed;
-#if SINKNODE
+#if WITHSINKSOFT
 	static byte rxserialbuf[SINKMTU];
 	static byte rxserialbufindex;
 	static void handleserialrx();
