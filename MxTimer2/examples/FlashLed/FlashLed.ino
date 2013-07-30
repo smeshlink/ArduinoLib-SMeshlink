@@ -21,7 +21,7 @@ void setup()
 	digitalWrite(led_pin,HIGH);
 	pinMode(28,OUTPUT);
 	pinMode(29,OUTPUT);
-	MxTimer2::set(64, 128, flash); // call every 500 1ms "ticks"
+	MxTimer2::set(1000, flash); // call every 500 1ms "ticks"
 	MxTimer2::start();
 
 }

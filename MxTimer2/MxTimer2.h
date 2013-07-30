@@ -18,6 +18,7 @@ typedef enum{
 
 namespace MxTimer2 {
 	extern unsigned long time_units;
+	extern uint8_t hasfunc;
 	extern void (*func)();
 	extern volatile unsigned long count;
 	extern volatile char overflowing;

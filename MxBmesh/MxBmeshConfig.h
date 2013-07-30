@@ -20,7 +20,7 @@
 #define WITHSINKSOFT		1
 #if WITHSINKSOFT
 #include <SerialCrc.h>
-#define SINKMTU			150 	//250 serial max size
+#define SINKMTU			256 	//250 serial max size
 enum HDLCPacketType
 {
 	XPACKET_ACK = 0x40,
@@ -40,14 +40,14 @@ enum HDLCPacketType
 #elif (RAMEND < 16000)
 #define	RFQUENEMAX 		20
 #else
-#define	RFQUENEMAX 		40
+#define	RFQUENEMAX 		35
 #endif
 
 #define MAX_NB		20	//neigbour size
 
 #define	RETRYSEND_MAX 		10  //auto resend max count
 #define RELAYDELAY		5		//relay rf delay
-#define NODECOUNT_MAX		255	//255 //max node size
+#define NODECOUNT_MAX		254	//255 //max node size
 #define BROADCASTINTERVALPAST_MAX 4 //neigbour lost count
 #define RSSI_STEP 0				//replace neigbour node rssi good
 
@@ -58,7 +58,7 @@ enum HDLCPacketType
 #define SINKADDRESS		0
 #define BROADCASTADDR	255
 
-#define MAX_ROUTER		20 //hop limit
+#define MAX_ROUTER		15 //hop limit
 
 
 #define TXPOWERSHIFT		128 //eeprom value is real txpower+TXPOWERSHIFT
@@ -90,6 +90,8 @@ enum HDLCPacketType
 
 #define MSGTYPE_DU_NEEDAPPACK		19 //data upload
 
+#define MSGTYPE_CMD_SETBASEROUTE		20 //data get
+#define MSGTYPE_CMD_GETDATA		21 //data get
 
 #define MSGTYPE_WAKEUP_SHIFT		0xF0 //wakeup preamble message type
 

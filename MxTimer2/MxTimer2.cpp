@@ -7,6 +7,7 @@
  
 #include <MxTimer2.h>
 unsigned long MxTimer2::time_units;
+uint8_t MxTimer2::hasfunc=0;
 void (*MxTimer2::func)();
 volatile unsigned long MxTimer2::count;
 volatile char MxTimer2::overflowing;
@@ -17,6 +18,7 @@ void MxTimer2::set(unsigned long units,  void (*f)()) {
 	else
 		time_units = units;
 	func = f;
+	hasfunc=(func == 0) ? 0 : 1;
 #if  defined (__AVR_ATmega1284P__) || defined (__AVR_AT90USB1287__) || defined (__AVR_ATmega1281__) || defined (__AVR_ATmega2560__) || defined (__AVR_ATmega128RFA1__) || defined(__AVR_ATmega256RFR2__)
 	cli();
 	ASSR |= (1 << AS2);
@@ -93,7 +95,8 @@ void MxTimer2::_overflow() {
 	if (count >= time_units && !overflowing) {
 		overflowing = 1;
 		count = count - time_units;
-		(*func)();
+		if (hasfunc)
+			(*func)();
 		overflowing = 0;
 	}
 }

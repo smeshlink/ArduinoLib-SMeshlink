@@ -31,12 +31,13 @@ private:
 	static void timer2function();
 	static byte broadcast_interval_passed;
 	static uint16_t	dataupload_interval_passed;
+	static uint16_t	timeout_interval_passed;
 #if WITHSINKSOFT
 	static byte rxserialbuf[SINKMTU];
 	static byte rxserialbufindex;
 	static void handleserialrx();
 	static HardwareSerial *sinkSerial;
-	static void WritePacketData(byte *ioData, byte startIndex, int len);
+
 	static void package_recieve(uint8_t  *buf,byte len);
 	static void package_send(uint8_t  *buf,byte len);
 #endif
@@ -45,6 +46,12 @@ private:
 	static void (*IntervalElapsedFunction)();
 	static uint8_t hasDownloadDataFunction;
 	static void (*DownloadDataFunction)(uint8_t* payload,uint8_t len);
+	static uint16_t Timeout;
+	static void (*TimeoutFunction)();
+	static uint8_t hasSerialHandlerFunction;
+	static uint8_t (*SerialHandlerFunction)(uint8_t  *buf,byte len);
+	static uint8_t hasGetdataHandlerFunction;
+	static void (*GetdataHandlerFunction)();
 
 	static void handlerftx();
 	static void handlerfrx();
@@ -68,8 +75,13 @@ public:
 	static void broadcastdata(byte msgtype,const uint8_t *buffer, size_t size);
 	static void broadcastdata(byte msgtype,char* str);
 	static void attachIntervalElapsed(void(*)());
+	static void attachTimeOut(uint16_t,void(*)());
 	static void attachDownloadData(void(*)(uint8_t* payload,uint8_t len));
 	static void sendbmeshdata(byte nodeid,byte msgtype,const unsigned char *buffer, size_t size,bool withheader=false);
+	static bool uploaddataAcked;
+	static void attachSerialHandler(uint8_t(*)(uint8_t  *buf,byte len));
+	static void attachGetdataHandler(void(*)());
+	static void WritePacketData(byte *ioData, byte startIndex, int len);
 
 };
 extern MXBMESH MxBmesh;
