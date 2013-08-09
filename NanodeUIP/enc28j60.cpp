@@ -191,8 +191,8 @@ void enc28j60clkout(uint8_t clk)
 }
 
 void enc28j60SpiInit() {
-	pinMode(SPI_SS, OUTPUT);
-	digitalWrite(SPI_SS, HIGH);
+	//pinMode(SPI_SS, OUTPUT);
+	//digitalWrite(SPI_SS, HIGH);
 	pinMode(SPI_MOSI, OUTPUT);
 	pinMode(SPI_SCK, OUTPUT);
 	pinMode(SPI_MISO, INPUT);
@@ -204,7 +204,7 @@ void enc28j60SpiInit() {
 
 	//SPCR = _BV(SPE) | _BV(MSTR) | _BV(SPR0);
 	//SPCR = _BV(SPE) | _BV(MSTR) | _BV(SPR1);
-	SPCR = _BV(SPE) | _BV(MSTR) | _BV(SPR0) | _BV(SPR1);
+	SPCR = _BV(SPE) | _BV(MSTR) | _BV(SPR0);// | _BV(SPR1);
 	SPSR |= _BV(SPI2X);
 }
 
