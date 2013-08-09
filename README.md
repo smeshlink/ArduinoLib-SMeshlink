@@ -14,4 +14,5 @@ Arduino Library including function belows:
 	Pthread ability;
 	Coap ability;
 	LowPower Mesh ability;
+	Uip ability;
 	......
