@@ -304,10 +304,10 @@ clock_arch_sleepms(unsigned char howlong)
 #include <avr/sleep.h>
 #include <dev/watchdog.h>
 
-
+#if AVR_CONF_USE32KCRYSTAL
 	/* Save TIMER2 configuration for clock.c is using it */
 	uint8_t savedTCNT2=TCNT2, savedTCCR2A=TCCR2A, savedTCCR2B = TCCR2B, savedOCR2A = OCR2A;
-
+#endif
 	cli();
 	watchdog_stop();
 	set_sleep_mode(SLEEP_MODE_PWR_SAVE);
@@ -337,6 +337,7 @@ clock_arch_sleepms(unsigned char howlong)
 
 	/* Disable sleep mode after wakeup, so random code cant trigger sleep */
 	SMCR  &= ~(1 << SE);
+#if AVR_CONF_USE32KCRYSTAL
 	/* Restore clock.c configuration */
 	cli();
 	TCCR2A = savedTCCR2A;
@@ -344,13 +345,17 @@ clock_arch_sleepms(unsigned char howlong)
 	OCR2A  = savedOCR2A;
 	TCNT2  = savedTCNT2;
 	sei();
+#else
+/* Disable TIMER2 interrupt */
+    TIMSK2 &= ~(1 << OCIE2A);
+#endif
 	clock_adjust_ms(howlong);
 	watchdog_start();
 
 
 
 }
-ISR(TIMER2_COMPA_vect)
+ISR(AVR_OUTPUT_COMPARE_INT)
 {
 	count++;
 	milliseconds=1024 / CLOCK_SECOND+milliseconds;
@@ -364,6 +369,15 @@ ISR(TIMER2_COMPA_vect)
 	}
 
 }
+#if !AVR_CONF_USE32KCRYSTAL
+/*---------------------------------------------------------------------------*/
+/* TIMER2 Interrupt service */
+
+ISR(TIMER2_COMPA_vect)
+{
+
+}
+#endif /* !AVR_CONF_USE32KCRYSTAL */
 
 /*---------------------------------------------------------------------------*/
 

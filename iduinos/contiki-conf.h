@@ -36,7 +36,8 @@
 #define __CONTIKI_CONF_H__
 
 #define IDUINO 1
-#define LOWPOWER 0
+#define AVR_CONF_USE32KCRYSTAL 1
+#define AVR_CONF_TMR0_PRESCALE 1024
 #include "stdint.h"
 #ifndef IDUINO_VERSION_STRING
 #define IDUINO_VERSION_STRING "iDuino 1.0"
